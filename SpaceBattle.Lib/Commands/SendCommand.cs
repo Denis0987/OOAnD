@@ -1,19 +1,18 @@
-﻿namespace SpaceBattle.Lib
+﻿namespace SpaceBattle.Lib;
+
+public class SendCommand : ICommand
 {
-    public class SendCommand : ICommand
+    private readonly ICommand _command;
+    private readonly ICommandReceiver _receiver;
+
+    public SendCommand(ICommand command, ICommandReceiver receiver)
     {
-        private readonly ICommand _command;
-        private readonly ICommandReceiver _receiver;
+        _command = command;
+        _receiver = receiver;
+    }
 
-        public SendCommand(ICommand command, ICommandReceiver receiver)
-        {
-            _command = command;
-            _receiver = receiver;
-        }
-
-        public void Execute()
-        {
-            _receiver.Receive(_command);
-        }
+    public void Execute()
+    {
+        _receiver.Receive(_command);
     }
 }

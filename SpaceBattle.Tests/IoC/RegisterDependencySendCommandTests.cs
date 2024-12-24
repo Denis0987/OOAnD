@@ -5,27 +5,41 @@ namespace SpaceBattle.Tests
 {
     public class RegisterDependencySendCommandTests
     {
+        private readonly Mock<ICommand> _command;
+        private readonly Mock<ICommandReceiver> _receiver;
+        private const string SendCommandDependency = "Commands.Send";
+
         public RegisterDependencySendCommandTests()
         {
+            SetupIoCScope();
+            _command = new Mock<ICommand>();
+            _receiver = new Mock<ICommandReceiver>();
+        }
+
+        private void SetupIoCScope()
+        {
             new InitScopeBasedIoCImplementationCommand().Execute();
-            IoC.Resolve<ICommand>("Scopes.Current.Set",
-                IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"))).Execute();
+            var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
         }
 
         [Fact]
-        public void Execute_RegistersDependency()
+        public void DependencyRegistration_CreatesValidSendCommand()
         {
-            // Arrange
-            var command = new Mock<ICommand>();
-            var receiver = new Mock<ICommandReceiver>();
+            RegisterAndValidateSendCommand();
+        }
 
-            // Act
+        private void RegisterAndValidateSendCommand()
+        {
             new RegisterIoCDependencySendCommand().Execute();
+            var command = IoC.Resolve<ICommand>(SendCommandDependency, _command.Object, _receiver.Object);
+            ValidateCommand(command);
+        }
 
-            // Assert
-            var resolvedCommand = IoC.Resolve<ICommand>("Commands.Send", command.Object, receiver.Object);
-            Assert.NotNull(resolvedCommand);
-            Assert.IsType<SendCommand>(resolvedCommand);
+        private void ValidateCommand(ICommand command)
+        {
+            Assert.NotNull(command);
+            Assert.IsType<SendCommand>(command);
         }
     }
 }

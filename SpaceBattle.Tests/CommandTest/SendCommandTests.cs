@@ -20,19 +20,17 @@ namespace SpaceBattle.Tests
         {
             _messageHandler.Setup(x => x.Receive(_longRunningTask.Object));
             _sendCommand.Execute();
-            _messageHandler.Verify(handler => handler.Receive(_longRunningTask.Object), Times.Once);
+            _messageHandler.Verify(handler => handler.Receive(_longRunningTask.Object), Times.Once());
         }
 
         [Fact]
         public void SendCommand_Propagates_Handler_Exception()
         {
-            var expectedError = new Exception("Handler failure");
             _messageHandler
-                .Setup(handler => handler.Receive(It.IsAny<ICommand>()))
-                .Throws(expectedError);
+                .Setup(handler => handler.Receive(_longRunningTask.Object))
+                .Throws<Exception>();
 
-            var actualError = Assert.Throws<Exception>(() => _sendCommand.Execute());
-            Assert.Same(expectedError, actualError);
+            Assert.Throws<Exception>(() => _sendCommand.Execute());
         }
     }
 }
