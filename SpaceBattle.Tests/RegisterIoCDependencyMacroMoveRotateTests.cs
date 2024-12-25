@@ -9,7 +9,7 @@ namespace SpaceBattle.Tests
         {
             new InitScopeBasedIoCImplementationCommand().Execute();
 
-            IoC.Resolve<Hwdtech.ICommand>(
+            IoC.Resolve<ICommand>(
                     "Scopes.Current.Set",
                     IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"))
                 )
@@ -25,19 +25,19 @@ namespace SpaceBattle.Tests
             var moveCommandMocks = moveSpec.Select(cmd =>
             {
                 var mock = new Mock<ICommand>();
-                IoC.Resolve<Hwdtech.ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
+                IoC.Resolve<ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
                 return mock;
             }).ToArray();
 
             var rotateCommandMocks = rotateSpec.Select(cmd =>
             {
                 var mock = new Mock<ICommand>();
-                IoC.Resolve<Hwdtech.ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
+                IoC.Resolve<ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
                 return mock;
             }).ToArray();
 
-            IoC.Resolve<Hwdtech.ICommand>("IoC.Register", "Specs.Move", (object[] args) => moveSpec).Execute();
-            IoC.Resolve<Hwdtech.ICommand>("IoC.Register", "Specs.Rotate", (object[] args) => rotateSpec).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "Specs.Move", (object[] args) => moveSpec).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "Specs.Rotate", (object[] args) => rotateSpec).Execute();
 
             new RegisterIoCDependencyMacroMoveRotate().Execute();
 
