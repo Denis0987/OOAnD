@@ -5,7 +5,7 @@ public class CommandInjectableCommandTests
     [Fact]
     public void Execute_ShouldCallInjectedCommand()
     {
-        var mockCommand = new Mock<SpaceBattle.Lib.ICommand>();
+        var mockCommand = new Mock<ICommand>();
         var commandInjectable = new CommandInjectableCommand();
 
         commandInjectable.Inject(mockCommand.Object);
