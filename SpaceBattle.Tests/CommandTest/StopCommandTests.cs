@@ -1,6 +1,5 @@
 ﻿namespace SpaceBattle.Tests;
 
-using System.Diagnostics;
 using Hwdtech;
 using Hwdtech.Ioc;
 using SpaceBattle.Lib;
