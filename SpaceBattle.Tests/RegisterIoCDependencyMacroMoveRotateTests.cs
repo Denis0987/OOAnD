@@ -41,11 +41,11 @@ namespace SpaceBattle.Tests
 
             new RegisterIoCDependencyMacroMoveRotate().Execute();
 
-            var moveMacro = IoC.Resolve<ICommand>("Macro.Move", new object[] { "arg1", "arg2" });
-            var rotateMacro = IoC.Resolve<ICommand>("Macro.Rotate", new object[] { "arg1", "arg2" });
+            var moveMacro = IoC.Resolve<ICommand>("Macro.Move", new object[] { "gameObject" });
+            var rotateMacro = IoC.Resolve<ICommand>("Macro.Rotate", new object[] { "gameObject" });
 
             Assert.IsType<MacroCommand>(moveMacro);
-            Assert.IsType<MacroCommand>(rotateMacro);
+            Assert.IsType<MacroCommand>(rotateMacro);   
 
             moveMacro.Execute();
             foreach (var mock in moveCommandMocks)
