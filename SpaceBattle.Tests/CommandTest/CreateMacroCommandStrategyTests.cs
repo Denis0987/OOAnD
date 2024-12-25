@@ -1,5 +1,6 @@
 ﻿using Hwdtech.Ioc;
-namespace SpaceBattle.Lib;
+namespace SpaceBattle.Tests;
+using SpaceBattle.Lib;
 
 public class CreateMacroCommandStrategyTests
 {
