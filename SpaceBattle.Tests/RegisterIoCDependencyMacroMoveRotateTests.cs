@@ -45,7 +45,7 @@ namespace SpaceBattle.Tests
             var rotateMacro = IoC.Resolve<ICommand>("Macro.Rotate", new object[] { "gameObject" });
 
             Assert.IsType<MacroCommand>(moveMacro);
-            Assert.IsType<MacroCommand>(rotateMacro);   
+            Assert.IsType<MacroCommand>(rotateMacro);
 
             moveMacro.Execute();
             foreach (var mock in moveCommandMocks)
