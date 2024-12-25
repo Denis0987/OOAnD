@@ -21,7 +21,7 @@
         return new Vector(resultCoordinates);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         return (obj is Vector otherVector && obj != null && Coordinates.SequenceEqual(otherVector.Coordinates));
     }
@@ -31,12 +31,12 @@
             HashCode.Combine(current, coordinate));
     }
 
-    public static bool operator ==(Vector v1, Vector v2)
+    public static bool operator ==(Vector? v1, Vector? v2)
     {
         return !(v1 is null || v2 is null) && v1.Equals(v2);
     }
 
-    public static bool operator !=(Vector v1, Vector v2)
+    public static bool operator !=(Vector? v1, Vector? v2)
     {
         return !(v1 == v2);
     }

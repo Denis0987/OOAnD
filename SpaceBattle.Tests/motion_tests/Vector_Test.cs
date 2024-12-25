@@ -21,8 +21,8 @@ public class VectorTests
     [Fact]
     public void BothVectorsAreNullTest()
     {
-        Vector v1 = null;
-        Vector v2 = null;
+        Vector? v1 = null;
+        Vector? v2 = null;
         Assert.False(v1 == v2);
         Assert.True(v1 != v2);
     }
