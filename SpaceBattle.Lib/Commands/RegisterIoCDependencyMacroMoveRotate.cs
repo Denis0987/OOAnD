@@ -1,6 +1,6 @@
 ﻿namespace SpaceBattle.Lib;
 
-public class RegisterIoCDependencyMacroMoveRotate : Hwdtech.ICommand
+public class RegisterIoCDependencyMacroMoveRotate : ICommand
 {
     public void Execute()
     {
