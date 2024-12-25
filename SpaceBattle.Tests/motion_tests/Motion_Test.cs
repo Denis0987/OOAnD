@@ -47,4 +47,4 @@ namespace SpaceBattle.Tests
             Assert.Throws<Exception>(() => moveCommand.Execute());
         }
     }
-} 
+}
