@@ -7,7 +7,7 @@ public class RegisterIoCDependencyMoveCommand : ICommand
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Commands.Move",
-            (object[] args) => new MoveCommand(new MovingAdapter((IDictionary<string, object>)args[0]))
+            (object[] args) => new MoveCommand(IoC.Resolve<IMoving>("Adapters.IMovingObject", args[0]))
         ).Execute();
     }
 }
