@@ -33,11 +33,6 @@ public class RegisterIoCDependencyActionsStopTests
     {
         new RegisterIoCDependencyActionsStop().Execute();
         var command = IoC.Resolve<ICommand>(ActionKey, _testObject, MoveCommand);
-        ValidateCommand(command);
-    }
-
-    private void ValidateCommand(ICommand command)
-    {
         Assert.NotNull(command);
         Assert.IsType<StopCommand>(command);
     }

@@ -33,11 +33,6 @@ namespace SpaceBattle.Tests
         {
             new RegisterIoCDependencySendCommand().Execute();
             var command = IoC.Resolve<ICommand>(SendCommandDependency, _command.Object, _receiver.Object);
-            ValidateCommand(command);
-        }
-
-        private void ValidateCommand(ICommand command)
-        {
             Assert.NotNull(command);
             Assert.IsType<SendCommand>(command);
         }
