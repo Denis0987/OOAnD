@@ -6,7 +6,7 @@ public class RegisterIoCDependencyCommandInjectableCommandTests
     public RegisterIoCDependencyCommandInjectableCommandTests()
     {
         new InitScopeBasedIoCImplementationCommand().Execute();
-        IoC.Resolve<Hwdtech.ICommand>(
+        IoC.Resolve<ICommand>(
                 "Scopes.Current.Set",
                 IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"))
             )
@@ -19,7 +19,7 @@ public class RegisterIoCDependencyCommandInjectableCommandTests
         var registerCommand = new RegisterIoCDependencyCommandInjectableCommand();
         registerCommand.Execute();
 
-        var resolvedCommand = IoC.Resolve<SpaceBattle.Lib.ICommand>("Commands.CommandInjectable");
+        var resolvedCommand = IoC.Resolve<ICommand>("Commands.CommandInjectable");
         var resolvedCommandInjectable = IoC.Resolve<ICommandInjectable>("Commands.CommandInjectable");
         var resolvedCommandInjectableCommand = IoC.Resolve<CommandInjectableCommand>("Commands.CommandInjectable");
 
