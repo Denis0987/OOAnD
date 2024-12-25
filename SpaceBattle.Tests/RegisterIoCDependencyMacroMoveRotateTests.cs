@@ -40,16 +40,17 @@ namespace SpaceBattle.Tests
 
             var moveMacro = IoC.Resolve<SpaceBattle.Lib.ICommand>("Macro.Move");
             moveMacro.Execute();
-            foreach (var mock in moveCommandMocks)
-            {
-                mock.Verify(cmd => cmd.Execute(), Times.Once());
-            }
-
             var rotateMacro = IoC.Resolve<SpaceBattle.Lib.ICommand>("Macro.Rotate");
             rotateMacro.Execute();
+
+            foreach (var mock in moveCommandMocks)
+            {
+                mock.Verify(cmd => cmd.Execute(), Times.Once()); 
+            }
+
             foreach (var mock in rotateCommandMocks)
             {
-                mock.Verify(cmd => cmd.Execute(), Times.Once());
+                mock.Verify(cmd => cmd.Execute(), Times.Once()); 
             }
         }
     }
