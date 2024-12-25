@@ -14,33 +14,33 @@ namespace SpaceBattle.Tests
         public void Execute_ShouldRegisterMacroMoveAndRotate()
         {
             var iocScope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
-            IoC.Resolve<Hwdtech.ICommand>("Scopes.Current.Set", iocScope).Execute();
+            IoC.Resolve<ICommand>("Scopes.Current.Set", iocScope).Execute();
 
             var moveSpec = new[] { "MoveCommand1", "MoveCommand2" };
             var rotateSpec = new[] { "RotateCommand1", "RotateCommand2" };
 
             var moveCommandMocks = moveSpec.Select(cmd =>
             {
-                var mock = new Mock<SpaceBattle.Lib.ICommand>();
-                IoC.Resolve<Hwdtech.ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
+                var mock = new Mock<ICommand>();
+                IoC.Resolve<ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
                 return mock;
             }).ToArray();
 
             var rotateCommandMocks = rotateSpec.Select(cmd =>
             {
-                var mock = new Mock<SpaceBattle.Lib.ICommand>();
-                IoC.Resolve<Hwdtech.ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
+                var mock = new Mock<ICommand>();
+                IoC.Resolve<ICommand>("IoC.Register", cmd, (object[] args) => mock.Object).Execute();
                 return mock;
             }).ToArray();
 
-            IoC.Resolve<Hwdtech.ICommand>("IoC.Register", "Specs.Move", (object[] args) => moveSpec).Execute();
-            IoC.Resolve<Hwdtech.ICommand>("IoC.Register", "Specs.Rotate", (object[] args) => rotateSpec).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "Specs.Move", (object[] args) => moveSpec).Execute();
+            IoC.Resolve<ICommand>("IoC.Register", "Specs.Rotate", (object[] args) => rotateSpec).Execute();
 
             new RegisterIoCDependencyMacroMoveRotate().Execute();
 
-            var moveMacro = IoC.Resolve<SpaceBattle.Lib.ICommand>("Macro.Move");
+            var moveMacro = IoC.Resolve<ICommand>("Macro.Move");
             moveMacro.Execute();
-            var rotateMacro = IoC.Resolve<SpaceBattle.Lib.ICommand>("Macro.Rotate");
+            var rotateMacro = IoC.Resolve<ICommand>("Macro.Rotate");
             rotateMacro.Execute();
 
             foreach (var mock in moveCommandMocks)
