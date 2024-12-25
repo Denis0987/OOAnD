@@ -1,5 +1,3 @@
-using System;
-
 namespace SpaceBattle.Lib
 {
     public class CommandInjectableCommand : ICommand, ICommandInjectable
