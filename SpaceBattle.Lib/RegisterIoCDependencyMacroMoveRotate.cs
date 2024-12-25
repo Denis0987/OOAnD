@@ -1,5 +1,3 @@
-using Hwdtech;
-
 namespace SpaceBattle.Lib;
 
 public class RegisterIoCDependencyMacroMoveRotate : Hwdtech.ICommand
