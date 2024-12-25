@@ -1,4 +1,5 @@
-﻿namespace SpaceBattle.Lib;
+﻿using SpaceBattle.Lib;
+namespace SpaceBattle.Tests;
 using Hwdtech.Ioc;
 
 public class RegisterIoCDependencyMacroCommandTests
