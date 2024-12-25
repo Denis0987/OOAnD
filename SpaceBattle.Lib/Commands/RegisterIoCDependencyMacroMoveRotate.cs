@@ -1,19 +1,22 @@
-﻿namespace SpaceBattle.Lib;
-
-public class RegisterIoCDependencyMacroMoveRotate : ICommand
+﻿namespace SpaceBattle.Lib
 {
-    public void Execute()
+    public class RegisterIoCDependencyMacroMoveRotate : ICommand
     {
-        IoC.Resolve<ICommand>(
-            "IoC.Register",
-            "Macro.Move",
-            (object[] args) => new CreateMacroCommandStrategy("Move").Resolve(args)
-        ).Execute();
+        public void Execute()
+        {
+            IoC.Resolve<Hwdtech.ICommand>(
+                    "IoC.Register",
+                    "Macro.Move",
+                    (object[] args) => new CreateMacroCommandStrategy("Move").Resolve(args)
+                )
+                .Execute();
 
-        IoC.Resolve<ICommand>(
-            "IoC.Register",
-            "Macro.Rotate",
-            (object[] args) => new CreateMacroCommandStrategy("Rotate").Resolve(args)
-        ).Execute();
+            IoC.Resolve<Hwdtech.ICommand>(
+                    "IoC.Register",
+                    "Macro.Rotate",
+                    (object[] args) => new CreateMacroCommandStrategy("Rotate").Resolve(args)
+                )
+                .Execute();
+        }
     }
 }
