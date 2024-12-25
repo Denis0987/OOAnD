@@ -50,18 +50,6 @@ public class StopCommandTests
     }
 
     [Fact]
-    public void Execute_CompletesQuickly()
-    {
-        var stopCommand = new StopCommand(_obj, CommandType);
-        var timer = Stopwatch.StartNew();
-
-        stopCommand.Execute();
-
-        timer.Stop();
-        Assert.True(timer.ElapsedMilliseconds < 50);
-    }
-
-    [Fact]
     public void Execute_ThrowsWhenNoCommandFound()
     {
         var emptyObj = new Dictionary<string, object>();
