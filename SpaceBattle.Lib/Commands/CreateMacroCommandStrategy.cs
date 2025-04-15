@@ -1,17 +1,24 @@
 ﻿namespace SpaceBattle.Lib;
+
 public class CreateMacroCommandStrategy
 {
     private readonly string _commandSpec;
+
     public CreateMacroCommandStrategy(string commandSpec)
     {
         _commandSpec = commandSpec;
     }
+
     public ICommand Resolve(object[] args)
     {
-        var nameofcommand = IoC.Resolve<IEnumerable<string>>($"Specs.{_commandSpec}");
+        var names = IoC.Resolve<IEnumerable<string>>($"Specs.{_commandSpec}");
 
-        var command = nameofcommand.Select((name, index) => IoC.Resolve<ICommand>(name, new object[] { args[index] })).ToList();
+        var commands = names.Select((name, index) =>
+        {
+            var arg = index < args.Length ? args[index] : null;
+            return (ICommand)IoC.Resolve<ICommand>(name, arg);
+        }).ToList();
 
-        return new MacroCommand(command);
+        return new MacroCommand(commands);
     }
 }
