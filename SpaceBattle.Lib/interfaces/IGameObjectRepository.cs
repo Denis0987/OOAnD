@@ -1,6 +1,4 @@
-﻿using SpaceBattle.Lib.Interfaces;
-
-namespace SpaceBattle.Lib.Interfaces
+﻿namespace SpaceBattle.Lib.Interfaces
 {
     public interface IGameObjectRepository
     {

@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using SpaceBattle.Lib.Interfaces;
+﻿using SpaceBattle.Lib.Interfaces;
 
 namespace SpaceBattle.Lib.GameObjects
 {
@@ -11,14 +9,20 @@ namespace SpaceBattle.Lib.GameObjects
         public void Add(string id, IGameObject obj)
         {
             if (_storage.ContainsKey(id))
+            {
                 throw new ArgumentException($"Object '{id}' already exists.");
+            }
+
             _storage[id] = obj;
         }
 
         public void Remove(string id)
         {
             if (!_storage.ContainsKey(id))
+            {
                 throw new KeyNotFoundException($"Object '{id}' not found.");
+            }
+
             _storage.Remove(id);
         }
 
@@ -27,7 +31,10 @@ namespace SpaceBattle.Lib.GameObjects
         public IGameObject Get(string id)
         {
             if (!_storage.ContainsKey(id))
+            {
                 throw new KeyNotFoundException($"Object '{id}' not found.");
+            }
+
             return _storage[id];
         }
 
@@ -36,7 +43,10 @@ namespace SpaceBattle.Lib.GameObjects
         public void Replace(string id, IGameObject obj)
         {
             if (!_storage.ContainsKey(id))
+            {
                 throw new KeyNotFoundException($"Object '{id}' not found.");
+            }
+
             _storage[id] = obj;
         }
     }

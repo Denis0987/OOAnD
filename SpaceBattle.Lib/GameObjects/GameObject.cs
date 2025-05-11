@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using SpaceBattle.Lib.Interfaces;
+﻿using SpaceBattle.Lib.Interfaces;
 
 namespace SpaceBattle.Lib.GameObjects
 {

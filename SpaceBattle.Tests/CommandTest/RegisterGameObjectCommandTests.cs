@@ -1,8 +1,4 @@
-using Hwdtech.Ioc;
-using RegisterIoCDependencyCommand = SpaceBattle.Lib.Commands.RegisterIoCDependencyCommand;
-using Moq;
-using Xunit;
-using SpaceBattle.Lib.Commands;
+﻿using SpaceBattle.Lib.Commands;
 using SpaceBattle.Lib.Interfaces;
 
 namespace SpaceBattle.Tests.CommandTest;

@@ -1,6 +1,4 @@
-﻿using System;
-using SpaceBattle.Lib.Interfaces;
-using Hwdtech.Ioc;
+﻿using SpaceBattle.Lib.Interfaces;
 
 namespace SpaceBattle.Lib.Commands
 {
@@ -22,7 +20,9 @@ namespace SpaceBattle.Lib.Commands
             );
 
             if (!repo.Contains(_id))
+            {
                 throw new InvalidOperationException($"Object '{_id}' not found.");
+            }
 
             repo.Replace(_id, _obj);
         }

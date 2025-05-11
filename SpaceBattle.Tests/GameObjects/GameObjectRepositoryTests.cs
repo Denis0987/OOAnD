@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Xunit;
-using SpaceBattle.Lib.GameObjects;
-using SpaceBattle.Lib.Interfaces;
+﻿using SpaceBattle.Lib.GameObjects;
 
 namespace SpaceBattle.Tests.GameObjects;
 
