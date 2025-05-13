@@ -1,6 +1,4 @@
 ﻿using Hwdtech.Ioc;
-using Moq;
-using Xunit;
 using SpaceBattle.Lib.Commands;
 using SpaceBattle.Lib.Interfaces;
 

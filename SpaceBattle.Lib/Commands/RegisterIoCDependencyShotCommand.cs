@@ -1,5 +1,4 @@
-﻿using Hwdtech.Ioc;
-using SpaceBattle.Lib.Interfaces;
+﻿using SpaceBattle.Lib.Interfaces;
 
 namespace SpaceBattle.Lib.Commands
 {
