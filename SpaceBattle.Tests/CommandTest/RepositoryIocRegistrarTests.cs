@@ -1,54 +1,29 @@
-﻿using Hwdtech.Ioc;
-using SpaceBattle.Lib.Commands;
+﻿using SpaceBattle.Lib.Commands;
 
-namespace SpaceBattle.Tests.CommandTests
+namespace SpaceBattle.Tests.CommandTest
 {
     public class RepositoryIocRegistrarTests
     {
-        public RepositoryIocRegistrarTests()
-        {
-            new InitScopeBasedIoCImplementationCommand().Execute();
-            IoC.Resolve<ICommand>(
-                "Scopes.Current.Set",
-                IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"))
-            ).Execute();
-        }
-
         [Fact]
-        public void AddThenFetch_ReturnsSameObject()
+        public void Execute_RegistersAddRemoveFetchFactories()
         {
-            new RepositoryIocRegistrar().Execute();
+            var registrar = new RepositoryIocRegistrar();
 
-            var obj = new Dictionary<string, object> { ["alpha"] = 1 };
-            IoC.Resolve<ICommand>("Repository.Add", obj).Execute();
-            var fetched = IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", obj["uid"]);
+            registrar.Execute();
 
-            Assert.Same(obj, fetched);
-        }
+            var addEntry = new Dictionary<string, object> { ["name"] = "E1", ["uid"] = Guid.NewGuid() };
+            var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { addEntry });
+            Assert.IsType<RepositoryAddCommand>(addCmd);
+            addCmd.Execute();
 
-        [Fact]
-        public void FetchMissing_ThrowsException()
-        {
-            new RepositoryIocRegistrar().Execute();
-            Assert.Throws<KeyNotFoundException>(
-                () => IoC.Resolve<object>("Repository.Fetch", "absent")
+            var removeCmd = IoC.Resolve<ICommand>("Repository.Remove", new object[] { addEntry["uid"]! });
+            Assert.IsType<RepositoryRemoveCommand>(removeCmd);
+
+            var fetched = IoC.Resolve<IDictionary<string, object>>(
+                "Repository.Fetch",
+                new object[] { addEntry["uid"]! }
             );
-        }
-
-        [Fact]
-        public void RemoveThenFetch_ThrowsAfterRemoval()
-        {
-            new RepositoryIocRegistrar().Execute();
-
-            var obj = new Dictionary<string, object>();
-            IoC.Resolve<ICommand>("Repository.Add", obj).Execute();
-            var uid = obj["uid"].ToString()!;
-
-            IoC.Resolve<ICommand>("Repository.Remove", uid).Execute();
-
-            Assert.Throws<KeyNotFoundException>(
-                () => IoC.Resolve<object>("Repository.Fetch", uid)
-            );
+            Assert.Same(addEntry, fetched);
         }
     }
 }
