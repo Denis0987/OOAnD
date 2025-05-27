@@ -118,6 +118,30 @@ namespace SpaceBattle.Tests.CommandTest
         }
 
         [Fact]
+        public void AddCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentNullException>(() => IoC.Resolve<ICommand>("Repository.Add", null!));
+        }
+
+        [Fact]
+        public void AddCommand_Throws_OnEmptyArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { }));
+        }
+
+        [Fact]
+        public void AddCommand_Throws_OnNullEntryArg()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
+        }
+
+        [Fact]
         public void AddCommand_GeneratesUid_WhenUidIsWhitespace()
         {
             var registrar = new RepositoryIocRegistrar();
