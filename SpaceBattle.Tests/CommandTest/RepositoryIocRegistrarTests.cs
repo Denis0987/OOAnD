@@ -1,5 +1,4 @@
-using Hwdtech;
-using SpaceBattle.Lib.Commands;
+﻿using SpaceBattle.Lib.Commands;
 
 namespace SpaceBattle.Tests.CommandTest
 {
@@ -11,7 +10,6 @@ namespace SpaceBattle.Tests.CommandTest
             var scope = IoC.Resolve<object>("Scopes.New", root);
             IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
         }
-
 
         [Fact]
         public void AddCommand_Throws_OnDuplicateUid()
@@ -36,7 +34,6 @@ namespace SpaceBattle.Tests.CommandTest
             var removeCmd = IoC.Resolve<ICommand>("Repository.Remove", new object[] { uid });
             Assert.Throws<KeyNotFoundException>(() => removeCmd.Execute());
         }
-
 
         [Fact]
         public void AddCommand_Throws_OnNullEntry()
