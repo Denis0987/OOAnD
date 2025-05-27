@@ -1,34 +1,45 @@
 ﻿using SpaceBattle.Lib.Commands;
 
-namespace SpaceBattle.Tests.CommandTests
+namespace SpaceBattle.Tests.Commands
 {
     public class RepositoryAddCommandTests
     {
         [Fact]
-        public void Execute_AssignsUid_WhenMissing()
+        public void Execute_UsesProvidedValidUid_WhenNotDuplicate()
         {
             var backing = new Dictionary<string, IDictionary<string, object>>();
-            var entry = new Dictionary<string, object> { ["name"] = "ItemX" };
+            var entry = new Dictionary<string, object> { ["uid"] = "custom-123" };
 
             new RepositoryAddCommand(backing, entry).Execute();
 
-            Assert.True(entry.ContainsKey("uid"));
-            var uid = entry["uid"].ToString()!;
-
-            Assert.True(backing.ContainsKey(uid));
-            Assert.Same(entry, backing[uid]);
+            Assert.Equal("custom-123", entry["uid"]);
+            Assert.Same(entry, backing["custom-123"]);
         }
 
         [Fact]
-        public void Execute_Throws_OnDuplicateUid()
+        public void Execute_Regenerates_WhenWhitespaceUid()
         {
             var backing = new Dictionary<string, IDictionary<string, object>>();
-            var uid = "dup-1";
-            var entry = new Dictionary<string, object> { ["uid"] = uid };
-            backing[uid] = entry;
+            var entry = new Dictionary<string, object> { ["uid"] = "   " };
 
-            var cmd = new RepositoryAddCommand(backing, entry);
-            Assert.Throws<InvalidOperationException>(() => cmd.Execute());
+            new RepositoryAddCommand(backing, entry).Execute();
+
+            var newUid = entry["uid"] as string;
+            Assert.False(string.IsNullOrWhiteSpace(newUid));
+            Assert.True(backing.ContainsKey(newUid!));
+        }
+
+        [Fact]
+        public void Execute_Regenerates_WhenUidNotString()
+        {
+            var backing = new Dictionary<string, IDictionary<string, object>>();
+            var entry = new Dictionary<string, object> { ["uid"] = 12345 };
+
+            new RepositoryAddCommand(backing, entry).Execute();
+
+            var newUid = entry["uid"]!.ToString();
+            Assert.False(string.IsNullOrWhiteSpace(newUid));
+            Assert.True(backing.ContainsKey(newUid!));
         }
     }
 }

@@ -2,24 +2,25 @@
 {
     public class RepositoryRemoveCommand : ICommand
     {
-        private readonly IDictionary<string, IDictionary<string, object>> _store;
+        private readonly IDictionary<string, IDictionary<string, object>> _backing;
         private readonly string _uid;
 
         public RepositoryRemoveCommand(
-            IDictionary<string, IDictionary<string, object>> store,
-            string uid
-        )
+            IDictionary<string, IDictionary<string, object>> backing,
+            string uid)
         {
-            _store = store ?? throw new ArgumentNullException(nameof(store));
-            _uid = uid ?? throw new ArgumentNullException(nameof(uid));
+            _backing = backing ?? throw new ArgumentNullException(nameof(backing));
+            _uid = uid;
         }
 
         public void Execute()
         {
-            if (!_store.Remove(_uid))
+            if (string.IsNullOrWhiteSpace(_uid) || !_backing.ContainsKey(_uid))
             {
-                throw new KeyNotFoundException($"Узел с uid '{_uid}' не найден.");
+                throw new KeyNotFoundException($"Cannot remove: entry '{_uid ?? "<null>"}' not found.");
             }
+
+            _backing.Remove(_uid);
         }
     }
 }
