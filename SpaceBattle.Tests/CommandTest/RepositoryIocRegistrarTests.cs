@@ -1,4 +1,4 @@
-﻿using SpaceBattle.Lib.Commands;
+using SpaceBattle.Lib.Commands;
 
 namespace SpaceBattle.Tests.CommandTest
 {
@@ -58,6 +58,55 @@ namespace SpaceBattle.Tests.CommandTest
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
             Assert.Throws<ArgumentException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { "   " }));
+        }
+
+        [Fact]
+        public void AddCommand_GeneratesUid_WhenMissing()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            var entry = new Dictionary<string, object> { ["name"] = "E1" };
+            var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
+            addCmd.Execute();
+            Assert.True(entry.ContainsKey("uid"));
+            Assert.False(string.IsNullOrWhiteSpace(entry["uid"].ToString()));
+        }
+
+        [Fact]
+        public void RemoveCommand_Removes_ExistingEntry()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            var entry = new Dictionary<string, object> { ["name"] = "E1", ["uid"] = Guid.NewGuid().ToString() };
+            var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
+            addCmd.Execute();
+            var removeCmd = IoC.Resolve<ICommand>("Repository.Remove", new object[] { entry["uid"] });
+            var ex = Record.Exception(() => removeCmd.Execute());
+            Assert.Null(ex);
+        }
+
+        [Fact]
+        public void AddCommand_Throws_OnNullStore()
+        {
+            Assert.Throws<ArgumentNullException>(() => new RepositoryAddCommand(null!, new Dictionary<string, object>()));
+        }
+
+        [Fact]
+        public void RemoveCommand_Throws_OnNullStore()
+        {
+            Assert.Throws<ArgumentNullException>(() => new RepositoryRemoveCommand(null!, "uid"));
+        }
+
+        [Fact]
+        public void AddCommand_Throws_OnNullEntryCtor()
+        {
+            Assert.Throws<ArgumentNullException>(() => new RepositoryAddCommand(new Dictionary<string, IDictionary<string, object>>(), null!));
+        }
+
+        [Fact]
+        public void RemoveCommand_Throws_OnNullUidCtor()
+        {
+            Assert.Throws<ArgumentNullException>(() => new RepositoryRemoveCommand(new Dictionary<string, IDictionary<string, object>>(), null!));
         }
 
         [Fact]
