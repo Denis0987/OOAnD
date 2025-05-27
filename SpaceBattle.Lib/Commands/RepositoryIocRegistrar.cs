@@ -11,13 +11,7 @@
                 "Repository.Add",
                 (object[] args) =>
                 {
-                    if (args.Length < 1)
-                    {
-                        throw new ArgumentException("Repository.Add requires (entry)", nameof(args));
-                    }
-
-                    var entry = args[0] as IDictionary<string, object>
-                        ?? throw new ArgumentException("expected entry dictionary", nameof(args));
+                    var entry = (IDictionary<string, object>)args[0]!;
                     return new RepositoryAddCommand(store, entry);
                 }
             ).Execute();
@@ -27,14 +21,8 @@
                 "Repository.Remove",
                 (object[] args) =>
                 {
-                    if (args.Length < 1)
-                    {
-                        throw new ArgumentException("Repository.Remove requires (uid)", nameof(args));
-                    }
-
-                    var uid = args[0]?.ToString()
-                        ?? throw new ArgumentException("expected uid", nameof(args));
-                    return new RepositoryRemoveCommand(store, uid);
+                    var key = args[0]!.ToString()!;
+                    return new RepositoryRemoveCommand(store, key);
                 }
             ).Execute();
 
@@ -43,15 +31,10 @@
                 "Repository.Fetch",
                 (object[] args) =>
                 {
-                    if (args.Length < 1)
+                    var key = args[0]!.ToString()!;
+                    if (!store.TryGetValue(key, out var entry))
                     {
-                        throw new ArgumentException("Repository.Fetch requires (uid)", nameof(args));
-                    }
-
-                    var uid = args[0]?.ToString();
-                    if (string.IsNullOrWhiteSpace(uid) || !store.TryGetValue(uid, out var entry))
-                    {
-                        throw new KeyNotFoundException($"Узел с uid '{uid ?? "<null>"}' не найден.");
+                        throw new KeyNotFoundException($"Узел с uid '{key}' не найден.");
                     }
 
                     return entry;

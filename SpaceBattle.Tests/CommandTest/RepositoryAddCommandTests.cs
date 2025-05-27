@@ -1,45 +1,34 @@
 ﻿using SpaceBattle.Lib.Commands;
 
-namespace SpaceBattle.Tests.Commands
+namespace SpaceBattle.Tests.CommandTests
 {
     public class RepositoryAddCommandTests
     {
         [Fact]
-        public void Execute_UsesProvidedValidUid_WhenNotDuplicate()
+        public void Execute_AssignsUid_WhenMissing()
         {
             var backing = new Dictionary<string, IDictionary<string, object>>();
-            var entry = new Dictionary<string, object> { ["uid"] = "custom-123" };
+            var entry = new Dictionary<string, object> { ["name"] = "ItemX" };
 
             new RepositoryAddCommand(backing, entry).Execute();
 
-            Assert.Equal("custom-123", entry["uid"]);
-            Assert.Same(entry, backing["custom-123"]);
+            Assert.True(entry.ContainsKey("uid"));
+            var uid = entry["uid"].ToString()!;
+
+            Assert.True(backing.ContainsKey(uid));
+            Assert.Same(entry, backing[uid]);
         }
 
         [Fact]
-        public void Execute_Regenerates_WhenWhitespaceUid()
+        public void Execute_Throws_OnDuplicateUid()
         {
             var backing = new Dictionary<string, IDictionary<string, object>>();
-            var entry = new Dictionary<string, object> { ["uid"] = "   " };
+            var uid = "dup-1";
+            var entry = new Dictionary<string, object> { ["uid"] = uid };
+            backing[uid] = entry;
 
-            new RepositoryAddCommand(backing, entry).Execute();
-
-            var newUid = entry["uid"] as string;
-            Assert.False(string.IsNullOrWhiteSpace(newUid));
-            Assert.True(backing.ContainsKey(newUid!));
-        }
-
-        [Fact]
-        public void Execute_Regenerates_WhenUidNotString()
-        {
-            var backing = new Dictionary<string, IDictionary<string, object>>();
-            var entry = new Dictionary<string, object> { ["uid"] = 12345 };
-
-            new RepositoryAddCommand(backing, entry).Execute();
-
-            var newUid = entry["uid"]!.ToString();
-            Assert.False(string.IsNullOrWhiteSpace(newUid));
-            Assert.True(backing.ContainsKey(newUid!));
+            var cmd = new RepositoryAddCommand(backing, entry);
+            Assert.Throws<InvalidOperationException>(() => cmd.Execute());
         }
     }
 }
