@@ -118,6 +118,56 @@ namespace SpaceBattle.Tests.CommandTest
         }
 
         [Fact]
+        public void AddCommand_GeneratesUid_WhenUidIsWhitespace()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            var entry = new Dictionary<string, object> { ["name"] = "E1", ["uid"] = "   " };
+            var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
+            addCmd.Execute();
+            Assert.True(entry.ContainsKey("uid"));
+            Assert.False(string.IsNullOrWhiteSpace(entry["uid"].ToString()));
+        }
+
+        [Fact]
+        public void AddCommand_Handles_NonStringUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            var entry = new Dictionary<string, object> { ["name"] = "E1", ["uid"] = 12345 };
+            var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
+            var ex = Record.Exception(() => addCmd.Execute());
+            Assert.True(ex is null || ex is ArgumentException);
+        }
+
+        [Fact]
+        public void RepositoryIocRegistrar_Execute_Throws_OnSecondCall()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<Exception>(() => registrar.Execute());
+        }
+
+        [Fact]
+        public void Repository_AddRemove_MultipleEntries()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            var entry1 = new Dictionary<string, object> { ["name"] = "E1", ["uid"] = Guid.NewGuid().ToString() };
+            var entry2 = new Dictionary<string, object> { ["name"] = "E2", ["uid"] = Guid.NewGuid().ToString() };
+            var addCmd1 = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry1 });
+            var addCmd2 = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry2 });
+            addCmd1.Execute();
+            addCmd2.Execute();
+            var removeCmd1 = IoC.Resolve<ICommand>("Repository.Remove", new object[] { entry1["uid"] });
+            var removeCmd2 = IoC.Resolve<ICommand>("Repository.Remove", new object[] { entry2["uid"] });
+            var ex1 = Record.Exception(() => removeCmd1.Execute());
+            var ex2 = Record.Exception(() => removeCmd2.Execute());
+            Assert.Null(ex1);
+            Assert.Null(ex2);
+        }
+
+        [Fact]
         public void RemoveCommand_Throws_OnNullUid()
         {
             var registrar = new RepositoryIocRegistrar();
