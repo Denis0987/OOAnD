@@ -174,4 +174,65 @@ public class VectorTests
         // Act & Assert
         Assert.False(vector.Equals(notAVector));
     }
+
+    [Fact]
+    public void GetHashCode_ForDifferentVectors_ReturnsDifferentHashCodes()
+    {
+        // Arrange
+        var v1 = new Vector(1, 2, 3);
+        var v2 = new Vector(3, 2, 1);
+
+        // Act
+        var hash1 = v1.GetHashCode();
+        var hash2 = v2.GetHashCode();
+
+        // Assert
+        Assert.NotEqual(hash1, hash2);
+    }
+
+    [Fact]
+    public void Equals_WithDerivedVector_ReturnsFalse()
+    {
+        // Arrange
+        var vector = new Vector(1, 2, 3);
+        var derivedVector = new DerivedVector(1, 2, 3);
+
+        // Act & Assert
+        Assert.False(vector.Equals(derivedVector));
+    }
+
+    private class DerivedVector : Vector
+    {
+        public DerivedVector(params int[] coordinates) : base(coordinates) { }
+    }
+
+    [Fact]
+    public void GetHashCode_WithSameValues_ReturnsSameHashCode()
+    {
+        // Arrange
+        var v1 = new Vector(1, 2, 3);
+        var v2 = new Vector(1, 2, 3);
+
+        // Act
+        var hash1 = v1.GetHashCode();
+        var hash2 = v2.GetHashCode();
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact]
+    public void GetHashCode_WithDifferentLengths_ReturnsDifferentHashCodes()
+    {
+        // Arrange
+        var v1 = new Vector(1, 2);
+        var v2 = new Vector(1, 2, 3);
+
+        // Act
+        var hash1 = v1.GetHashCode();
+        var hash2 = v2.GetHashCode();
+
+        // Assert
+        Assert.NotEqual(hash1, hash2);
+    }
 }

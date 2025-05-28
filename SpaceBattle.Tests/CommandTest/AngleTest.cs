@@ -181,4 +181,16 @@ public class AngleTest
         // Act & Assert
         Assert.True(angle1 != angle2);
     }
+
+    [Fact]
+    public void Equals_WithDerivedType_ReturnsFalse()
+    {
+        // Arrange
+        var angle = new Angle(1, 8);
+        var derived = new DerivedAngle(1, 8);
+
+        // Act & Assert
+        Assert.False(angle.Equals(derived));
+        Assert.False(derived.Equals(angle));
+    }
 }

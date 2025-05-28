@@ -23,7 +23,13 @@
 
     public override bool Equals(object? obj)
     {
-        return (obj is Vector otherVector && obj != null && Coordinates.SequenceEqual(otherVector.Coordinates));
+        if (obj == null || obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        var otherVector = (Vector)obj;
+        return Coordinates.SequenceEqual(otherVector.Coordinates);
     }
     public override int GetHashCode()
     {
