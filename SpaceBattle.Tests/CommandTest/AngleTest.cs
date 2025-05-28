@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Tests;
+namespace SpaceBattle.Tests;
 using SpaceBattle.Lib;
 
 public class AngleTest
@@ -99,11 +99,73 @@ public class AngleTest
     }
 
     [Fact]
+    public void OperatorEquals_WithBothNull_ReturnsTrue()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.True(angle1 == angle2);
+    }
+
+    [Fact]
+    public void OperatorNotEquals_WithNullValues_ReturnsFalse()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.False(angle1 != angle2);
+    }
+
+    [Fact]
+    public void Equals_WithDifferentType_ReturnsFalse()
+    {
+        // Arrange
+        var angle = new Angle(1, 8);
+        var obj = new object();
+
+        // Act & Assert
+        Assert.False(angle.Equals(obj));
+    }
+
+    [Fact]
+    public void GetHashCode_ForEqualAngles_ReturnsSameValue()
+    {
+        // Arrange
+        var angle1 = new Angle(1, 8);
+        var angle2 = new Angle(9, 8);
+
+        // Act
+        var hash1 = angle1.GetHashCode();
+        var hash2 = angle2.GetHashCode();
+
+        // Assert - Different angles but same hash code due to normalization
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact]
+    public void ImplicitConversion_ToDouble_ReturnsCorrectValue()
+    {
+        // Arrange
+        var angle = new Angle(1, 4); // 90 degrees in radians should be π/2
+
+        // Act
+        double result = angle;
+
+        // Assert
+        Assert.Equal(Math.PI / 2, result, 10);
+    }
+
+    [Fact]
     public void OperatorNotEquals_WithFirstNull_ReturnsTrue()
     {
         // Arrange
         Angle? angle1 = null;
         var angle2 = new Angle(1, 8);
+
 
         // Act & Assert
         Assert.True(angle1 != angle2);
@@ -120,17 +182,6 @@ public class AngleTest
 
         // Assert
         Assert.Equal(Math.PI, result, 5); // 0.5 * 2π = π
-    }
-
-    [Fact]
-    public void Equals_WithDifferentType_ReturnsFalse()
-    {
-        // Arrange
-        var angle = new Angle(1, 8);
-        var notAnAngle = new object();
-
-        // Act & Assert
-        Assert.False(angle.Equals(notAnAngle));
     }
 
     [Fact]
