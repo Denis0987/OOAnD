@@ -1,4 +1,4 @@
-using SpaceBattle.Lib.Commands;
+﻿using SpaceBattle.Lib.Commands;
 
 namespace SpaceBattle.Tests.CommandTest
 {
@@ -110,12 +110,12 @@ namespace SpaceBattle.Tests.CommandTest
             registrar.Execute();
             var testUid = Guid.NewGuid().ToString();
             var entry = new Dictionary<string, object> { ["name"] = "TestEntry", ["uid"] = testUid };
-            
+
             var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
             addCmd.Execute();
-            
+
             var fetched = IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { testUid });
-            
+
             Assert.Equal("TestEntry", fetched["name"]);
             Assert.Equal(testUid, fetched["uid"]);
         }
@@ -126,8 +126,8 @@ namespace SpaceBattle.Tests.CommandTest
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
             var testUid = Guid.NewGuid().ToString();
-            var entry = new Dictionary<string, object> 
-            { 
+            var entry = new Dictionary<string, object>
+            {
                 ["string"] = "test",
                 ["int"] = 123,
                 ["bool"] = true,
@@ -135,10 +135,10 @@ namespace SpaceBattle.Tests.CommandTest
                 ["nullValue"] = null!,
                 ["uid"] = testUid
             };
-            
+
             var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
             addCmd.Execute();
-            
+
             var fetched = IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { testUid });
             Assert.Equal("test", fetched["string"]);
             Assert.Equal(123, fetched["int"]);
@@ -152,8 +152,8 @@ namespace SpaceBattle.Tests.CommandTest
         {
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
-            
-            Assert.Throws<ArgumentException>(() => 
+
+            Assert.Throws<ArgumentException>(() =>
                 IoC.Resolve<ICommand>("Repository.Remove", new object[] { "   " }));
         }
 
@@ -162,8 +162,8 @@ namespace SpaceBattle.Tests.CommandTest
         {
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
-            
-            Assert.Throws<KeyNotFoundException>(() => 
+
+            Assert.Throws<KeyNotFoundException>(() =>
                 IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { "nonexistent" }));
         }
 
@@ -174,14 +174,14 @@ namespace SpaceBattle.Tests.CommandTest
             registrar.Execute();
             var testUid = "TestUid123";
             var entry = new Dictionary<string, object> { ["name"] = "TestEntry", ["uid"] = testUid };
-            
+
             var addCmd = IoC.Resolve<ICommand>("Repository.Add", new object[] { entry });
             addCmd.Execute();
-            
+
             var removeCmd = IoC.Resolve<ICommand>("Repository.Remove", new object[] { testUid.ToLower() });
-            
+
             Assert.Throws<KeyNotFoundException>(() => removeCmd.Execute());
-            
+
             var fetched = IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { testUid });
             Assert.Equal("TestEntry", fetched["name"]);
         }
