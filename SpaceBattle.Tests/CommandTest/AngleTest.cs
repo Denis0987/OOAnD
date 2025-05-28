@@ -1,4 +1,4 @@
-namespace SpaceBattle.Tests;
+﻿namespace SpaceBattle.Tests;
 using SpaceBattle.Lib;
 
 public class AngleTest
@@ -165,7 +165,6 @@ public class AngleTest
         // Arrange
         Angle? angle1 = null;
         var angle2 = new Angle(1, 8);
-
 
         // Act & Assert
         Assert.True(angle1 != angle2);
