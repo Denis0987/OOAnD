@@ -93,6 +93,63 @@ namespace SpaceBattle.Tests
             Assert.Same(expectedException, actualException);
         }
 
+        [Fact]
+        public void Execute_MultipleTimes_CallsReceiverEachTime()
+        {
+            // Arrange
+            var callCount = 0;
+            _messageHandler
+                .Setup(h => h.Receive(It.IsAny<ICommand>()))
+                .Callback(() => callCount++);
+
+            // Act
+            _sendCommand.Execute();
+            _sendCommand.Execute();
+            _sendCommand.Execute();
+
+            // Assert
+            Assert.Equal(3, callCount);
+            _messageHandler.Verify(h => h.Receive(It.IsAny<ICommand>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public void Execute_WithDifferentCommand_ForwardsCorrectCommand()
+        {
+            // Arrange
+            var customCommand = new Mock<ICommand>();
+            var sendCommand = new SendCommand(customCommand.Object, _messageHandler.Object);
+
+            // Act
+            sendCommand.Execute();
+
+            // Assert
+            _messageHandler.Verify(h => h.Receive(customCommand.Object), Times.Once);
+            _messageHandler.Verify(h => h.Receive(_longRunningTask.Object), Times.Never);
+        }
+
+        [Fact]
+        public void Constructor_WithNullCommand_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            var ex = Assert.Throws<ArgumentNullException>(
+                () => new SendCommand(null!, _messageHandler.Object));
+            Assert.Equal("command", ex.ParamName);
+        }
+
+        [Fact]
+        public void Execute_WithCustomException_PropagatesException()
+        {
+            // Arrange
+            var customException = new CustomTestException("Custom test exception");
+            _messageHandler
+                .Setup(h => h.Receive(It.IsAny<ICommand>()))
+                .Throws(customException);
+
+            // Act & Assert
+            var ex = Assert.Throws<CustomTestException>(() => _sendCommand.Execute());
+            Assert.Same(customException, ex);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposed)
@@ -123,6 +180,11 @@ namespace SpaceBattle.Tests
                 CommandReceived = true;
                 command.Execute();
             }
+        }
+
+        private class CustomTestException : Exception
+        {
+            public CustomTestException(string message) : base(message) { }
         }
     }
 }
