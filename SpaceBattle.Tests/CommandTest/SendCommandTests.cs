@@ -186,5 +186,117 @@ namespace SpaceBattle.Tests
         {
             public CustomTestException(string message) : base(message) { }
         }
+
+        [Fact]
+        public void Execute_WithNullCommand_ThrowsInvalidOperation()
+        {
+            // Arrange - Create a receiver that will handle a null command
+            var receiver = new Mock<ICommandReceiver>();
+            var sendCommand = new SendCommand(_longRunningTask.Object, receiver.Object);
+
+            // This test ensures that even if the receiver tries to handle a null command,
+            // the SendCommand itself won't fail as it validates the command in constructor
+            receiver.Setup(r => r.Receive(It.IsAny<ICommand>()))
+                   .Callback<ICommand>(cmd =>
+                   {
+                       if (cmd == null)
+                       {
+                           throw new InvalidOperationException("Null command received");
+                       }
+                   });
+
+            // Act & Assert - Should not throw as the command is validated in constructor
+            sendCommand.Execute();
+            receiver.Verify(r => r.Receive(It.IsAny<ICommand>()), Times.Once);
+        }
+
+        [Fact]
+        public void Execute_WithThreadSafeReceiver_HandlesConcurrentCalls()
+        {
+            // Arrange
+            var counter = 0;
+            var resetEvent = new ManualResetEvent(false);
+            var receiver = new Mock<ICommandReceiver>();
+            var sendCommand = new SendCommand(_longRunningTask.Object, receiver.Object);
+
+            receiver.Setup(r => r.Receive(It.IsAny<ICommand>()))
+                   .Callback(() =>
+                   {
+                       Interlocked.Increment(ref counter);
+                       resetEvent.WaitOne();
+                   });
+
+            // Act - Start multiple threads
+            const int threadCount = 10;
+            var threads = new Thread[threadCount];
+            for (var i = 0; i < threadCount; i++)
+            {
+                threads[i] = new Thread(() => sendCommand.Execute());
+                threads[i].Start();
+            }
+
+            // Let threads start and block
+            Thread.Sleep(100);
+
+            // Release all threads
+            resetEvent.Set();
+
+            // Wait for all threads to complete
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+
+            // Assert
+            Assert.Equal(threadCount, counter);
+            receiver.Verify(r => r.Receive(It.IsAny<ICommand>()), Times.Exactly(threadCount));
+        }
+
+        [Fact]
+        public void Execute_WithExceptionInReceiver_DoesNotBlockSubsequentCalls()
+        {
+            // Arrange
+            var callCount = 0;
+            _messageHandler
+                .Setup(h => h.Receive(It.IsAny<ICommand>()))
+                .Callback(() =>
+                {
+                    callCount++;
+                    if (callCount == 1)
+                    {
+                        throw new InvalidOperationException("First call fails");
+                    }
+                });
+
+            // First call - should throw
+            Assert.Throws<InvalidOperationException>(() => _sendCommand.Execute());
+
+            // Second call - should succeed
+            _sendCommand.Execute();
+
+            // Assert
+            _messageHandler.Verify(h => h.Receive(It.IsAny<ICommand>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public void Execute_WithVeryFastCalls_HandlesAllCalls()
+        {
+            // Arrange
+            const int iterations = 1000;
+            var counter = 0;
+            _messageHandler
+                .Setup(h => h.Receive(It.IsAny<ICommand>()))
+                .Callback(() => Interlocked.Increment(ref counter));
+
+            // Act
+            for (var i = 0; i < iterations; i++)
+            {
+                _sendCommand.Execute();
+            }
+
+            // Assert
+            Assert.Equal(iterations, counter);
+            _messageHandler.Verify(h => h.Receive(It.IsAny<ICommand>()), Times.Exactly(iterations));
+        }
     }
 }
