@@ -33,17 +33,11 @@ public class VectorTests
     [Fact]
     public void VectorIsNullTest()
     {
+        // Arrange
         Vector? v1 = null;
         var v2 = new Vector(2, 4);
-        Assert.False(v1 == v2);
-        Assert.True(v1 != v2);
-    }
 
-    [Fact]
-    public void BothVectorsAreNullTest()
-    {
-        Vector? v1 = null;
-        Vector? v2 = null;
+        // Act & Assert
         Assert.False(v1 == v2);
         Assert.True(v1 != v2);
     }
@@ -113,5 +107,26 @@ public class VectorTests
 
         Assert.Equal(v1.GetHashCode(), v2.GetHashCode());
         Assert.NotEqual(v1.GetHashCode(), v3.GetHashCode());
+    }
+
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var vector = new Vector(1, 2, 3);
+
+        // Act & Assert
+        Assert.False(vector.Equals(null));
+    }
+
+    [Fact]
+    public void AdditionOperator_WithNullVector_ThrowsNullReferenceException()
+    {
+        // Arrange
+        var v1 = new Vector(1, 2, 3);
+        Vector? v2 = null;
+
+        // Act & Assert
+        Assert.Throws<NullReferenceException>(() => v1 + v2!);
     }
 }

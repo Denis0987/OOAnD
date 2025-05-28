@@ -65,4 +65,60 @@ public class AngleTest
         var angle = new Angle(0, 8);
         Assert.Equal(1.0, Math.Round(Math.Cos(angle), 3));
     }
+
+    [Fact]
+    public void Constructor_WithNegativeNumerator_NormalizesAngle()
+    {
+        // Arrange & Act
+        var angle = new Angle(-1, 8);
+        var expected = new Angle(7, 8);
+
+        // Assert - Test the behavior through the public API
+        Assert.Equal(expected, angle);
+    }
+
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var angle = new Angle(1, 8);
+
+        // Act & Assert
+        Assert.False(angle.Equals(null));
+    }
+
+    [Fact]
+    public void OperatorEquals_WithFirstNull_ReturnsFalse()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        var angle2 = new Angle(1, 8);
+
+        // Act & Assert
+        Assert.False(angle1 == angle2);
+    }
+
+    [Fact]
+    public void OperatorNotEquals_WithFirstNull_ReturnsTrue()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        var angle2 = new Angle(1, 8);
+
+        // Act & Assert
+        Assert.True(angle1 != angle2);
+    }
+
+    [Fact]
+    public void ImplicitConversionToDouble_ReturnsCorrectValue()
+    {
+        // Arrange
+        var angle = new Angle(4, 8); // 4/8 = 0.5 of full circle
+
+        // Act
+        double result = angle;
+
+        // Assert
+        Assert.Equal(Math.PI, result, 5); // 0.5 * 2π = π
+    }
 }
