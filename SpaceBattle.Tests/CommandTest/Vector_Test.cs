@@ -1,4 +1,4 @@
-namespace SpaceBattle.Tests;
+﻿namespace SpaceBattle.Tests;
 
 public class VectorTests
 {
@@ -15,16 +15,16 @@ public class VectorTests
         int[] nullCoords = null!;
         Assert.Throws<ArgumentException>(() => new Vector(nullCoords));
     }
-    
+
     [Fact]
     public void Equals_WithNonVectorObject_ReturnsFalse()
     {
         // Arrange
         var vector = new Vector(1, 2, 3);
-        object notAVector = new object();
+        var notAVector = new object();
 
         // Act
-        bool result = vector.Equals(notAVector);
+        var result = vector.Equals(notAVector);
 
         // Assert
         Assert.False(result);
