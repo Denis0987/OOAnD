@@ -129,4 +129,49 @@ public class VectorTests
         // Act & Assert
         Assert.Throws<NullReferenceException>(() => v1 + v2!);
     }
+
+    [Fact]
+    public void EqualityOperator_BothVectorsNull_ReturnsTrue()
+    {
+        // Arrange
+        Vector? v1 = null;
+        Vector? v2 = null;
+
+        // Act & Assert
+        Assert.True(v1 == v2);
+    }
+
+    [Fact]
+    public void EqualityOperator_OneVectorNull_ReturnsFalse()
+    {
+        // Arrange
+        Vector? v1 = null;
+        var v2 = new Vector(1, 2, 3);
+
+        // Act & Assert
+        Assert.False(v1 == v2);
+        Assert.False(v2 == v1);
+    }
+
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var v1 = new Vector(1, 2, 3);
+        var v2 = v1;
+
+        // Act & Assert
+        Assert.True(v1.Equals(v2));
+    }
+
+    [Fact]
+    public void Equals_WithDifferentType_ReturnsFalse()
+    {
+        // Arrange
+        var vector = new Vector(1, 2, 3);
+        var notAVector = new object();
+
+        // Act & Assert
+        Assert.False(vector.Equals(notAVector));
+    }
 }

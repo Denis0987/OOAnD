@@ -121,4 +121,64 @@ public class AngleTest
         // Assert
         Assert.Equal(Math.PI, result, 5); // 0.5 * 2π = π
     }
+
+    [Fact]
+    public void Equals_WithDifferentType_ReturnsFalse()
+    {
+        // Arrange
+        var angle = new Angle(1, 8);
+        var notAnAngle = new object();
+
+        // Act & Assert
+        Assert.False(angle.Equals(notAnAngle));
+    }
+
+    [Fact]
+    public void Equals_WithDifferentTypeInheritedFromAngle_ReturnsFalse()
+    {
+        // Arrange
+        var angle = new Angle(1, 8);
+        var derivedAngle = new DerivedAngle(2, 8);
+
+        // Act & Assert
+        Assert.False(angle.Equals(derivedAngle));
+    }
+
+    private class DerivedAngle : Angle
+    {
+        public DerivedAngle(int numerator, int dNumerator) : base(numerator, dNumerator) { }
+    }
+
+    [Fact]
+    public void OperatorEquals_BothNull_ReturnsTrue()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.True(angle1 == angle2);
+    }
+
+    [Fact]
+    public void OperatorEquals_WithSecondNull_ReturnsFalse()
+    {
+        // Arrange
+        var angle1 = new Angle(1, 8);
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.False(angle1 == angle2);
+    }
+
+    [Fact]
+    public void OperatorNotEquals_WithSecondNull_ReturnsTrue()
+    {
+        // Arrange
+        var angle1 = new Angle(1, 8);
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.True(angle1 != angle2);
+    }
 }
