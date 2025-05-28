@@ -1,4 +1,4 @@
-namespace SpaceBattle.Tests;
+﻿namespace SpaceBattle.Tests;
 using SpaceBattle.Lib;
 
 public class AngleTest
