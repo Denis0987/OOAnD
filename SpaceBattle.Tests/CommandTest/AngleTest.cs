@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Tests;
+namespace SpaceBattle.Tests;
 using SpaceBattle.Lib;
 
 public class AngleTest
@@ -200,14 +200,25 @@ public class AngleTest
     }
 
     [Fact]
-    public void OperatorEquals_BothNull_ReturnsTrue()
+    public void Equals_WithSameTypeButDifferentValues_ReturnsFalse()
     {
         // Arrange
-        Angle? angle1 = null;
-        Angle? angle2 = null;
+        var angle1 = new Angle(1, 8);
+        var angle2 = new Angle(3, 8);
 
         // Act & Assert
-        Assert.True(angle1 == angle2);
+        Assert.False(angle1.Equals(angle2));
+    }
+
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var angle1 = new Angle(1, 8);
+        var angle2 = angle1;
+
+        // Act & Assert
+        Assert.True(angle1.Equals(angle2));
     }
 
     [Fact]
@@ -219,6 +230,17 @@ public class AngleTest
 
         // Act & Assert
         Assert.False(angle1 == angle2);
+    }
+
+    [Fact]
+    public void OperatorEquals_BothNull_ReturnsTrue()
+    {
+        // Arrange
+        Angle? angle1 = null;
+        Angle? angle2 = null;
+
+        // Act & Assert
+        Assert.True(angle1 == angle2);
     }
 
     [Fact]
@@ -242,5 +264,16 @@ public class AngleTest
         // Act & Assert
         Assert.False(angle.Equals(derived));
         Assert.False(derived.Equals(angle));
+    }
+
+    [Fact]
+    public void OperatorEquals_WithDifferentDenominators_ReturnsFalse()
+    {
+        // Arrange
+        var angle1 = new Angle(1, 8);
+        var angle2 = new Angle(1, 4);
+
+        // Act & Assert
+        Assert.False(angle1 == angle2);
     }
 }
