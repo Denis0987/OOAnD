@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Tests;
+namespace SpaceBattle.Tests;
 
 public class VectorTests
 {
@@ -7,6 +7,27 @@ public class VectorTests
     public void CreatingVectorWithEmptyCoordinatesTest()
     {
         Assert.Throws<ArgumentException>(() => new Vector());
+    }
+
+    [Fact]
+    public void CreatingVectorWithNullCoordinates_ThrowsException()
+    {
+        int[] nullCoords = null!;
+        Assert.Throws<ArgumentException>(() => new Vector(nullCoords));
+    }
+    
+    [Fact]
+    public void Equals_WithNonVectorObject_ReturnsFalse()
+    {
+        // Arrange
+        var vector = new Vector(1, 2, 3);
+        object notAVector = new object();
+
+        // Act
+        bool result = vector.Equals(notAVector);
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
