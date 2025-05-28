@@ -61,6 +61,14 @@ namespace SpaceBattle.Tests.CommandTest
         }
 
         [Fact]
+        public void FetchCommand_Throws_OnEmptyStringUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { string.Empty }));
+        }
+
+        [Fact]
         public void AddCommand_GeneratesUid_WhenMissing()
         {
             var registrar = new RepositoryIocRegistrar();
