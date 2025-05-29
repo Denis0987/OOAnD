@@ -1,5 +1,5 @@
+﻿using Hwdtech.Ioc;
 using SpaceBattle.Lib.Commands;
-using Hwdtech.Ioc;
 
 namespace SpaceBattle.Tests.CommandTest
 {
