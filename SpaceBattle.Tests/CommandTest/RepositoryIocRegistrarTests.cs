@@ -1,4 +1,5 @@
-﻿using SpaceBattle.Lib.Commands;
+using SpaceBattle.Lib.Commands;
+using Hwdtech.Ioc;
 
 namespace SpaceBattle.Tests.CommandTest
 {
@@ -6,8 +7,8 @@ namespace SpaceBattle.Tests.CommandTest
     {
         public RepositoryIocRegistrarTests()
         {
-            var root = IoC.Resolve<object>("Scopes.Root");
-            var scope = IoC.Resolve<object>("Scopes.New", root);
+            new InitScopeBasedIoCImplementationCommand().Execute();
+            var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
             IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
         }
 
