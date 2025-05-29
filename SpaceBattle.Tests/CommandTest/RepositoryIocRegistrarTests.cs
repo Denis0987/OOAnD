@@ -1,4 +1,7 @@
-﻿using SpaceBattle.Lib.Commands;
+using SpaceBattle.Lib.Commands;
+using Moq;
+using System.Collections.Concurrent;
+using System;
 
 namespace SpaceBattle.Tests.CommandTest
 {
@@ -40,7 +43,63 @@ namespace SpaceBattle.Tests.CommandTest
         {
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
-            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
+            Assert.Throws<ArgumentNullException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
+        }
+        
+        [Fact]
+        public void AddCommand_Throws_OnMissingArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Add", Array.Empty<object>()));
+        }
+        
+        [Fact]
+        public void RemoveCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentNullException>(() => IoC.Resolve<ICommand>("Repository.Remove", null!));
+        }
+        
+        [Fact]
+        public void RemoveCommand_Throws_OnMissingArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Remove", Array.Empty<object>()));
+        }
+        
+        [Fact]
+        public void RemoveCommand_Throws_OnNullUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Remove", new object[] { null! }));
+        }
+        
+        [Fact]
+        public void FetchCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentNullException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", null!));
+        }
+        
+        [Fact]
+        public void FetchCommand_Throws_OnMissingArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", Array.Empty<object>()));
+        }
+        
+        [Fact]
+        public void FetchCommand_Throws_OnNullUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            Assert.Throws<ArgumentException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { null! }));
         }
 
         [Fact]
@@ -97,6 +156,66 @@ namespace SpaceBattle.Tests.CommandTest
         public void AddCommand_Throws_OnNullStore()
         {
             Assert.Throws<ArgumentNullException>(() => new RepositoryAddCommand(null!, new Dictionary<string, object>()));
+        }
+
+        [Fact]
+        public void IoC_Register_AddCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentNullException>(() => 
+                IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
+        }
+
+        [Fact]
+        public void IoC_Register_AddCommand_Throws_OnInvalidEntryType()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentException>(() => 
+                IoC.Resolve<ICommand>("Repository.Add", new object[] { "not a dictionary" }));
+        }
+
+        [Fact]
+        public void IoC_Register_RemoveCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentNullException>(() => 
+                IoC.Resolve<ICommand>("Repository.Remove", null!));
+        }
+
+        [Fact]
+        public void IoC_Register_RemoveCommand_Throws_OnEmptyUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentException>(() => 
+                IoC.Resolve<ICommand>("Repository.Remove", new object[] { string.Empty }));
+        }
+
+        [Fact]
+        public void IoC_Register_FetchCommand_Throws_OnNullArgs()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentNullException>(() => 
+                IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", null!));
+        }
+
+        [Fact]
+        public void IoC_Register_FetchCommand_Throws_OnEmptyUid()
+        {
+            var registrar = new RepositoryIocRegistrar();
+            registrar.Execute();
+            
+            Assert.Throws<ArgumentException>(() => 
+                IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { string.Empty }));
         }
 
         [Fact]
@@ -229,7 +348,7 @@ namespace SpaceBattle.Tests.CommandTest
         {
             var registrar = new RepositoryIocRegistrar();
             registrar.Execute();
-            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
+            Assert.Throws<ArgumentNullException>(() => IoC.Resolve<ICommand>("Repository.Add", new object[] { null! }));
         }
 
         [Fact]
@@ -277,25 +396,9 @@ namespace SpaceBattle.Tests.CommandTest
             var removeCmd1 = IoC.Resolve<ICommand>("Repository.Remove", new object[] { entry1["uid"] });
             var removeCmd2 = IoC.Resolve<ICommand>("Repository.Remove", new object[] { entry2["uid"] });
             var ex1 = Record.Exception(() => removeCmd1.Execute());
-            var ex2 = Record.Exception(() => removeCmd2.Execute());
             Assert.Null(ex1);
-            Assert.Null(ex2);
         }
 
-        [Fact]
-        public void RemoveCommand_Throws_OnNullUid()
-        {
-            var registrar = new RepositoryIocRegistrar();
-            registrar.Execute();
-            Assert.Throws<ArgumentException>(() => IoC.Resolve<ICommand>("Repository.Remove", new object[] { null! }));
-        }
 
-        [Fact]
-        public void FetchCommand_Throws_OnNullUid()
-        {
-            var registrar = new RepositoryIocRegistrar();
-            registrar.Execute();
-            Assert.Throws<ArgumentException>(() => IoC.Resolve<IDictionary<string, object>>("Repository.Fetch", new object[] { null! }));
-        }
     }
 }

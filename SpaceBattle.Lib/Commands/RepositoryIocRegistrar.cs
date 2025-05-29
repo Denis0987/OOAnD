@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Commands
+namespace SpaceBattle.Lib.Commands
 {
     public class RepositoryIocRegistrar : ICommand
     {
@@ -16,10 +16,16 @@
                         throw new ArgumentNullException(nameof(args));
                     }
 
-                    if (args.Length < 1 || args[0] == null)
+                    if (args.Length < 1)
                     {
                         throw new ArgumentException(
-                            "Entry argument cannot be null.", nameof(args));
+                            "Entry argument is required.", nameof(args));
+                    }
+                    
+                    if (args[0] == null)
+                    {
+                        throw new ArgumentNullException(
+                            "args[0]", "Entry cannot be null.");
                     }
 
                     if (args[0] is not IDictionary<string, object> entry)
