@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Commands
+﻿namespace SpaceBattle.Lib.Commands
 {
     public class RepositoryIocRegistrar : ICommand
     {
@@ -21,7 +21,7 @@ namespace SpaceBattle.Lib.Commands
                         throw new ArgumentException(
                             "Entry argument is required.", nameof(args));
                     }
-                    
+
                     if (args[0] == null)
                     {
                         throw new ArgumentNullException(
