@@ -18,17 +18,43 @@ public class Angle
 
     public override bool Equals(object? obj)
     {
-        return obj != null && obj is Angle angle && angle.Numerator == Numerator && angle.DNumerator == DNumerator;
+        if (obj is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        var other = (Angle)obj;
+        return Numerator == other.Numerator && DNumerator == other.DNumerator;
     }
 
-    public static bool operator ==(Angle angle_1, Angle angle_2)
+    public static bool operator ==(Angle? angle_1, Angle? angle_2)
     {
-        return angle_1.Equals(angle_2);
+        if (ReferenceEquals(angle_1, angle_2))
+        {
+            return true;
+        }
+
+        if (angle_1 is null || angle_2 is null)
+        {
+            return false;
+        }
+
+        return angle_1.Numerator == angle_2.Numerator && angle_1.DNumerator == angle_2.DNumerator;
     }
 
-    public static bool operator !=(Angle angle_1, Angle angle_2)
+    public static bool operator !=(Angle? angle_1, Angle? angle_2)
     {
-        return !(angle_1.Equals(angle_2));
+        return !(angle_1 == angle_2);
     }
 
     public override int GetHashCode()

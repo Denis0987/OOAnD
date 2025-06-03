@@ -23,7 +23,13 @@
 
     public override bool Equals(object? obj)
     {
-        return (obj is Vector otherVector && obj != null && Coordinates.SequenceEqual(otherVector.Coordinates));
+        if (obj == null || obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        var otherVector = (Vector)obj;
+        return Coordinates.SequenceEqual(otherVector.Coordinates);
     }
     public override int GetHashCode()
     {
@@ -33,7 +39,17 @@
 
     public static bool operator ==(Vector? v1, Vector? v2)
     {
-        return !(v1 is null || v2 is null) && v1.Equals(v2);
+        if (ReferenceEquals(v1, v2))
+        {
+            return true;
+        }
+
+        if (v1 is null || v2 is null)
+        {
+            return false;
+        }
+
+        return v1.Equals(v2);
     }
 
     public static bool operator !=(Vector? v1, Vector? v2)
