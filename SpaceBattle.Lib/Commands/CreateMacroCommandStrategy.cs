@@ -16,7 +16,7 @@ public class CreateMacroCommandStrategy
         var commands = names.Select((name, index) =>
         {
             var arg = index < args.Length ? args[index] : null;
-            return (ICommand)IoC.Resolve<ICommand>(name, arg);
+            return (ICommand)IoC.Resolve<ICommand>(name, arg ?? Array.Empty<object>());
         }).ToList();
 
         return new MacroCommand(commands);
