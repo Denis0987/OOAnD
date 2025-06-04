@@ -14,65 +14,47 @@ public class CollisionDataWriterCommandTests
 
     public CollisionDataWriterCommandTests()
     {
-        try
+        new InitScopeBasedIoCImplementationCommand().Execute();
+
+        var rootScope = IoC.Resolve<object>("Scopes.Root");
+
+        var scope = IoC.Resolve<object>("Scopes.New", rootScope);
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        IoC.Resolve<ICommand>(
+            "IoC.Register",
+            "IoC.Scope.Current",
+            (object[] _) => scope
+        ).Execute();
+
+        _testDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempCollisions");
+        if (Directory.Exists(_testDir))
         {
-
-            new InitScopeBasedIoCImplementationCommand().Execute();
-
-            // Get the root scope
-            var rootScope = IoC.Resolve<object>("Scopes.Root");
-
-            // Create a new scope for the test
-            var scope = IoC.Resolve<object>("Scopes.New", rootScope);
-            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-            // Register required dependencies
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "IoC.Scope.Current",
-                (object[] _) => scope
-            ).Execute();
-
-            // Create a temporary directory for tests
-            _testDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempCollisions");
-            if (Directory.Exists(_testDir))
-            {
-                Directory.Delete(_testDir, recursive: true);
-            }
-
-            Directory.CreateDirectory(_testDir);
-
-            // Register the storage directory for these tests
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (object[] _) => _testDir
-            ).Execute();
+            Directory.Delete(_testDir, recursive: true);
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in test setup: {ex}");
-            throw;
-        }
+
+        Directory.CreateDirectory(_testDir);
+
+        IoC.Resolve<ICommand>(
+            "IoC.Register",
+            "Collision.StorageDirectory",
+            (object[] _) => _testDir
+        ).Execute();
     }
 
     [Fact]
     public void Execute_ShouldWriteFileWithCorrectContent()
     {
-        // Arrange
         var samplePoints = new List<int[]> { new[] { 2, 4, 6 }, new[] { 8, 10, 12 } };
         var fileName = "collision_test.log";
 
         var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
-        // Act
         writer.Execute();
 
-        // Assert: файл по ожидаемому пути должен существовать
         var fullPath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(fullPath));
 
-        // Содержимое: каждая строка — числа, разделённые запятой
         var lines = File.ReadAllLines(fullPath);
         Assert.Equal(2, lines.Length);
         Assert.Equal("2,4,6", lines[0]);
@@ -82,15 +64,12 @@ public class CollisionDataWriterCommandTests
     [Fact]
     public void Execute_WhenDirectoryNotExists_ShouldCreateDirectory()
     {
-        // Arrange
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
         var fileName = "subdir/test_collision.log";
         var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
-        // Act
         writer.Execute();
 
-        // Assert
         var fullPath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(fullPath));
         var lines = File.ReadAllLines(fullPath);
@@ -381,9 +360,9 @@ public class CollisionDataWriterCommandTests
 
             writer.Execute();
 
-            Assert.True(Directory.Exists(newDir), "Directory should be created");
+            Assert.True(Directory.Exists(newDir));
             var filePath = Path.Combine(newDir, fileName);
-            Assert.True(File.Exists(filePath), "File should be created");
+            Assert.True(File.Exists(filePath));
             var content = File.ReadAllText(filePath);
             Assert.Equal("1,2,3", content.Trim());
         }
@@ -422,7 +401,7 @@ public class CollisionDataWriterCommandTests
             writer.Execute();
 
             var filePath = Path.Combine(testDir, fileName);
-            Assert.True(File.Exists(filePath), "File should be created in test directory");
+            Assert.True(File.Exists(filePath));
 
             try
             {
@@ -431,7 +410,7 @@ public class CollisionDataWriterCommandTests
                     File.Delete(filePath);
                 }
             }
-            catch { /* Ignore cleanup errors */ }
+            catch { }
         }
         finally
         {
@@ -440,7 +419,7 @@ public class CollisionDataWriterCommandTests
             {
                 Directory.Delete(testDir, true);
             }
-            catch { /* Ignore cleanup errors */ }
+            catch { }
         }
     }
 
@@ -466,14 +445,12 @@ public class CollisionDataWriterCommandTests
 
                 var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
-                // Act & Assert
                 var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
                 Assert.Contains("Error writing to file", exception.Message);
                 Assert.IsType<IOException>(exception.InnerException);
             }
             finally
             {
-                // Cleanup
                 IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
             }
         }
