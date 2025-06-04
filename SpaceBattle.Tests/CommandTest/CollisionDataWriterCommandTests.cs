@@ -282,4 +282,64 @@ public class CollisionDataWriterCommandTests
             }
         }
     }
+
+    [Fact]
+    public void Execute_WithNullStorageDir_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            // Register null storage directory
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => null!)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+            Assert.Contains("Storage directory is not set", exception.Message);
+        }
+        finally
+        {
+            // Cleanup
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
+
+    [Fact]
+    public void Execute_WithEmptyStorageDir_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            // Register empty storage directory
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => string.Empty)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
+
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+            Assert.Contains("Storage directory is not set", exception.Message);
+        }
+        finally
+        {
+            // Cleanup
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
 }
