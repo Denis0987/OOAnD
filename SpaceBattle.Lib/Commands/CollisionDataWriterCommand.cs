@@ -17,7 +17,6 @@ public class CollisionDataWriterCommand : ICommand
 
     public void Execute()
     {
-        // Получаем из IoC директорию хранения
         var storageDir = IoC.Resolve<string>("Collision.StorageDirectory");
 
         if (string.IsNullOrEmpty(storageDir))
@@ -27,22 +26,17 @@ public class CollisionDataWriterCommand : ICommand
 
         try
         {
-            // Склеиваем полный путь
             var fullPath = Path.Combine(storageDir, _fileName);
-
-            // Конвертируем каждый int[] в строку: числа через запятую
             var lines = _collisionPoints
                 .Select(arr => string.Join(",", arr ?? Array.Empty<int>()))
                 .ToList();
 
-            // Создаём папку, если её ещё нет
             var dir = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             {
                 Directory.CreateDirectory(dir);
             }
 
-            // Записываем все строки в файл
             File.WriteAllLines(fullPath, lines);
         }
         catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is UnauthorizedAccessException || ex is PathTooLongException)
