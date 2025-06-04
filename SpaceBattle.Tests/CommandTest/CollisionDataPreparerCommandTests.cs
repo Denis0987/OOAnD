@@ -12,14 +12,11 @@ public class CollisionDataPreparerCommandTests
 {
     public CollisionDataPreparerCommandTests()
     {
-        // Initialize the IoC container implementation
         new InitScopeBasedIoCImplementationCommand().Execute();
 
-        // Create a new scope for the test
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
-        // Register storage directory
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Collision.StorageDirectory",
@@ -30,7 +27,7 @@ public class CollisionDataPreparerCommandTests
     [Fact]
     public void Execute_ShouldGatherDataAndCallSave()
     {
-        // Arrange
+
         var samplePoints = new List<int[]> { new[] { 7, 8, 9 }, new[] { 10, 11, 12 } };
         var mockProvider = new Mock<ICollisionInfoProvider>();
 
@@ -38,7 +35,6 @@ public class CollisionDataPreparerCommandTests
         mockProvider.Setup(p => p.SecondObjectId).Returns("Beta");
         mockProvider.Setup(p => p.GetCollisionPoints()).Returns(samplePoints);
 
-        // Регистрируем стратегию форматирования имени
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Collision.FileNameFormatter",
@@ -68,11 +64,9 @@ public class CollisionDataPreparerCommandTests
             }
         ).Execute();
 
-        // Act
         var preparerCmd = new CollisionDataPreparerCommand(mockProvider.Object);
         preparerCmd.Execute();
 
-        // Assert: 
         mockProvider.Verify(p => p.FirstObjectId, Times.Once);
         mockProvider.Verify(p => p.SecondObjectId, Times.Once);
         mockProvider.Verify(p => p.GetCollisionPoints(), Times.Once);
