@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -183,12 +183,13 @@ public class CollisionDataWriterCommandTests
     {
         // Arrange
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        var invalidFileName = "invalid|file.log";
+        // Use a path with invalid characters that will be rejected by Path.Combine
+        var invalidFileName = "invalid/\\?*:|" + new string(Path.GetInvalidFileNameChars()) + ".log";
         var writer = new CollisionDataWriterCommand(invalidFileName, samplePoints);
 
-        // Act & Assert - Verify that an IO exception is thrown with the correct message
+        // Act & Assert - Verify that an InvalidOperationException is thrown with the correct message
         var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-        Assert.Contains("error writing to file", exception.Message.ToLower());
+        Assert.Contains("invalid file path", exception.Message.ToLower());
     }
 
     [Fact]
