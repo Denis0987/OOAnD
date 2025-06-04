@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using Hwdtech;
@@ -134,5 +134,76 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Assert
         Assert.Equal("File@123__Name#456.log", result);
+    }
+
+    [Fact]
+    public void Formatter_WithNullArgs_ShouldThrowException()
+    {
+        // Arrange
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => IoC.Resolve<string>("Collision.FileNameFormatter", null, null));
+        Assert.Contains("First argument cannot be null", exception.Message);
+    }
+
+    [Fact]
+    public void Formatter_WithInsufficientArguments_ShouldThrowException()
+    {
+        // Arrange
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
+
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => IoC.Resolve<string>("Collision.FileNameFormatter", "onlyOne"));
+        Assert.Contains("Two arguments are required", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("file1", "name1", "file1__name1.log")]
+    [InlineData("file2", "name2", "file2__name2.log")]
+    [InlineData("file3", "name3", "file3__name3.log")]
+    public void Formatter_WithDifferentInputs_ShouldFormatCorrectly(string first, string second, string expected)
+    {
+        // Arrange
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
+
+        // Act
+        var result = IoC.Resolve<string>("Collision.FileNameFormatter", first, second);
+        
+        // Assert
+        Assert.Equal(expected, result);
+    }
+
+    [Fact]
+    public void Formatter_WithVeryLongStrings_ShouldFormatCorrectly()
+    {
+        // Arrange
+        var longString = new string('a', 1000);
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
+
+        // Act
+        var result = IoC.Resolve<string>("Collision.FileNameFormatter", longString, longString);
+        
+        // Assert
+        Assert.Equal($"{longString}__{longString}.log", result);
+    }
+
+    [Fact]
+    public void Formatter_WithSpecialUnicodeCharacters_ShouldFormatCorrectly()
+    {
+        // Arrange
+        var unicodeStr = "こんにちは世界";
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
+
+        // Act
+        var result = IoC.Resolve<string>("Collision.FileNameFormatter", unicodeStr, unicodeStr);
+        
+        // Assert
+        Assert.Equal($"{unicodeStr}__{unicodeStr}.log", result);
     }
 }
