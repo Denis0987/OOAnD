@@ -17,31 +17,25 @@ public class IoCRegisterCollisionDataSaverCommandTests : IDisposable
     {
         try
         {
-            // Initialize the IoC container implementation
             new InitScopeBasedIoCImplementationCommand().Execute();
 
-            // Get the root scope
             _rootScope = IoC.Resolve<object>("Scopes.Root");
 
-            // Create a new scope for the test
             _testScope = IoC.Resolve<object>("Scopes.New", _rootScope);
             IoC.Resolve<ICommand>("Scopes.Current.Set", _testScope).Execute();
 
-            // Register required dependencies
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "IoC.Scope.Current",
                 (object[] _) => _testScope
             ).Execute();
 
-            // Register storage directory
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "Collision.StorageDirectory",
                 (object[] _) => "./collisions"
             ).Execute();
 
-            // Register file name formatter
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "Collision.FileNameFormatter",
@@ -59,7 +53,6 @@ public class IoCRegisterCollisionDataSaverCommandTests : IDisposable
     {
         if (!_disposed)
         {
-            // Reset the IoC container to root scope
             try
             {
                 if (_rootScope != null)
@@ -79,14 +72,11 @@ public class IoCRegisterCollisionDataSaverCommandTests : IDisposable
     [Fact]
     public void Execute_ShouldRegisterDataSaverStrategy()
     {
-        // Act: регистрируем стратегию сохранения
         new IoCRegisterCollisionDataSaverCommand().Execute();
 
-        // Теперь проверим, что по ключу "Collision.DataSaver" IoC выдаст команду нужного типа
         var fakeData = new List<int[]> { new[] { 5, 6, 7 } };
         var saverCmd = IoC.Resolve<ICommand>("Collision.DataSaver", "myfile.log", fakeData);
 
-        // Убедимся, что получили экземпляр CollisionDataWriterCommand
         Assert.IsType<CollisionDataWriterCommand>(saverCmd);
     }
 }
