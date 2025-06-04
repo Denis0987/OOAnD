@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Hwdtech;
+using Hwdtech.Ioc;
 using SpaceBattle.Lib.Commands;
 using Xunit;
 
@@ -14,6 +16,9 @@ public class CollisionDataWriterCommandTests
     {
         try
         {
+            // Initialize the IoC container implementation
+            new InitScopeBasedIoCImplementationCommand().Execute();
+
             // Get the root scope
             var rootScope = IoC.Resolve<object>("Scopes.Root");
 
