@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ public class CollisionDataWriterCommandTests
         {
             // Get the root scope
             var rootScope = IoC.Resolve<object>("Scopes.Root");
-            
+
             // Create a new scope for the test
             var scope = IoC.Resolve<object>("Scopes.New", rootScope);
             IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
@@ -98,11 +98,11 @@ public class CollisionDataWriterCommandTests
     {
         // Arrange
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        
+
         // Create a new scope to avoid affecting other tests
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-        
+
         try
         {
             // Register a null storage directory
@@ -111,9 +111,9 @@ public class CollisionDataWriterCommandTests
                 "Collision.StorageDirectory",
                 (Func<object[], string?>)(_ => null)
             ).Execute();
-            
+
             var writer = new CollisionDataWriterCommand("test.log", samplePoints);
-            
+
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
             Assert.Contains("Storage directory is not set", exception.Message);

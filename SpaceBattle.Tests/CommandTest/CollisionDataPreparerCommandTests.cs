@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System.Collections.Generic;
 using Moq;
@@ -14,7 +14,7 @@ public class CollisionDataPreparerCommandTests
         {
             // Get the root scope
             var rootScope = IoC.Resolve<object>("Scopes.Root");
-            
+
             // Create a new scope for the test
             var scope = IoC.Resolve<object>("Scopes.New", rootScope);
             IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
