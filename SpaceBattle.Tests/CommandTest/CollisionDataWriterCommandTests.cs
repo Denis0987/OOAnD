@@ -447,6 +447,46 @@ public class CollisionDataWriterCommandTests
     }
 
     [Fact]
+    public void Execute_WhenDirectoryNameIsNull_ShouldHandleGracefully()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "test.log";
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            // Register test directory as root directory
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => Path.GetPathRoot(Directory.GetCurrentDirectory())!)
+            ).Execute();
+
+            // Create a file directly in the root directory (no subdirectories)
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            // Act
+            writer.Execute();
+
+            // Assert - Should not throw and should create the file
+            var filePath = Path.Combine(Path.GetPathRoot(Directory.GetCurrentDirectory())!, fileName);
+            Assert.True(File.Exists(filePath), "File should be created in root directory");
+
+            // Cleanup
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+        finally
+        {
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
+
+    [Fact]
     public void Execute_WhenIOErrorOccurs_ShouldThrowWithCorrectMessage()
     {
         // Arrange
