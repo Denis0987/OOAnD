@@ -1,11 +1,10 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using Hwdtech;
 using Hwdtech.Ioc;
 using SpaceBattle.Lib.Commands;
 using Xunit;
-using System.Collections.Generic;
 
 public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 {
@@ -19,7 +18,7 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
         {
             // Initialize the IoC container implementation
             new InitScopeBasedIoCImplementationCommand().Execute();
-            
+
             // Get the root scope
             _rootScope = IoC.Resolve<object>("Scopes.Root");
 
@@ -92,10 +91,10 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => IoC.Resolve<string>("Collision.FileNameFormatter", null!, "valid"));
-        
+
         Assert.Contains("First argument cannot be null", exception.Message);
     }
-    
+
     [Fact]
     public void Formatter_WithNullSecondArgument_ShouldThrowArgumentException()
     {
@@ -105,13 +104,9 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => IoC.Resolve<string>("Collision.FileNameFormatter", "valid", null!));
-        
+
         Assert.Contains("Second argument cannot be null", exception.Message);
     }
-    
-
-
-
 
     [Fact]
     public void Formatter_WithEmptyStrings_ShouldFormatCorrectly()
@@ -136,7 +131,7 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act
         var result = IoC.Resolve<string>("Collision.FileNameFormatter", "File@123", "Name#456");
-        
+
         // Assert
         Assert.Equal("File@123__Name#456.log", result);
     }
