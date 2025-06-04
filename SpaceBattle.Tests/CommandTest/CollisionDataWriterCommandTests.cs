@@ -403,6 +403,9 @@ public class CollisionDataWriterCommandTests
     {
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
         var fileName = "test.log";
+        var testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTest");
+        Directory.CreateDirectory(testDir);
+
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
@@ -411,24 +414,33 @@ public class CollisionDataWriterCommandTests
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "Collision.StorageDirectory",
-                (Func<object[], string>)(_ => Path.GetPathRoot(Directory.GetCurrentDirectory())!)
+                (Func<object[], string>)(_ => testDir)
             ).Execute();
 
             var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
             writer.Execute();
 
-            var filePath = Path.Combine(Path.GetPathRoot(Directory.GetCurrentDirectory())!, fileName);
-            Assert.True(File.Exists(filePath), "File should be created in root directory");
+            var filePath = Path.Combine(testDir, fileName);
+            Assert.True(File.Exists(filePath), "File should be created in test directory");
 
-            if (File.Exists(filePath))
+            try
             {
-                File.Delete(filePath);
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
             }
+            catch { /* Ignore cleanup errors */ }
         }
         finally
         {
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+            try
+            {
+                Directory.Delete(testDir, true);
+            }
+            catch { /* Ignore cleanup errors */ }
         }
     }
 
