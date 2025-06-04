@@ -1,6 +1,5 @@
-namespace SpaceBattle.Tests.CommandTest;
+﻿namespace SpaceBattle.Tests.CommandTest;
 
-using System;
 using System.Collections.Generic;
 using Hwdtech;
 using Hwdtech.Ioc;
@@ -15,7 +14,7 @@ public class CollisionDataPreparerCommandTests
     {
         // Initialize the IoC container implementation
         new InitScopeBasedIoCImplementationCommand().Execute();
-        
+
         // Create a new scope for the test
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
