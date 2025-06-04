@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using Hwdtech;
@@ -172,7 +172,7 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act
         var result = IoC.Resolve<string>("Collision.FileNameFormatter", first, second);
-        
+
         // Assert
         Assert.Equal(expected, result);
     }
@@ -187,7 +187,7 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act
         var result = IoC.Resolve<string>("Collision.FileNameFormatter", longString, longString);
-        
+
         // Assert
         Assert.Equal($"{longString}__{longString}.log", result);
     }
@@ -202,7 +202,7 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         // Act
         var result = IoC.Resolve<string>("Collision.FileNameFormatter", unicodeStr, unicodeStr);
-        
+
         // Assert
         Assert.Equal($"{unicodeStr}__{unicodeStr}.log", result);
     }
