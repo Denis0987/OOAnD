@@ -1,6 +1,9 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Tests.CommandTest;
 
+using System;
 using System.Collections.Generic;
+using Hwdtech;
+using Hwdtech.Ioc;
 using Moq;
 using SpaceBattle.Lib.Commands;
 using SpaceBattle.Lib.Interfaces;
@@ -10,34 +13,19 @@ public class CollisionDataPreparerCommandTests
 {
     public CollisionDataPreparerCommandTests()
     {
-        try
-        {
-            // Get the root scope
-            var rootScope = IoC.Resolve<object>("Scopes.Root");
+        // Initialize the IoC container implementation
+        new InitScopeBasedIoCImplementationCommand().Execute();
+        
+        // Create a new scope for the test
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
-            // Create a new scope for the test
-            var scope = IoC.Resolve<object>("Scopes.New", rootScope);
-            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-            // Register required dependencies
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "IoC.Scope.Current",
-                (object[] _) => scope
-            ).Execute();
-
-            // Register storage directory
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (object[] _) => "./collisions"
-            ).Execute();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error in test setup: {ex}");
-            throw;
-        }
+        // Register storage directory
+        IoC.Resolve<ICommand>(
+            "IoC.Register",
+            "Collision.StorageDirectory",
+            (object[] _) => "./collisions"
+        ).Execute();
     }
 
     [Fact]
