@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -259,7 +259,7 @@ public class CollisionDataWriterCommandTests
         // Arrange
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
         var fileName = "invalid/directory/test.log";
-        
+
         // Create a file with the same name as the directory we want to create
         var invalidDir = Path.Combine(_testDir, "invalid");
         File.WriteAllText(invalidDir, "This is a file, not a directory");
