@@ -149,4 +149,81 @@ public class CollisionDataWriterCommandTests
         );
         Assert.Equal("collisionPoints", exception.ParamName);
     }
+
+    [Fact]
+    public void Execute_WhenFileIsReadOnly_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "readonly_test.log";
+        var fullPath = Path.Combine(_testDir, fileName);
+
+        // Create a read-only file
+        File.WriteAllText(fullPath, "test");
+        File.SetAttributes(fullPath, FileAttributes.ReadOnly);
+
+        var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+        try
+        {
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+            Assert.Contains("access denied", exception.Message.ToLower());
+        }
+        finally
+        {
+            // Cleanup
+            File.SetAttributes(fullPath, FileAttributes.Normal);
+            File.Delete(fullPath);
+        }
+    }
+
+    [Fact]
+    public void Execute_WithInvalidFileName_ShouldThrowException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var invalidFileName = "invalid|file.log";
+        var writer = new CollisionDataWriterCommand(invalidFileName, samplePoints);
+
+        // Act & Assert - Verify that an IO exception is thrown with the correct message
+        var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("error writing to file", exception.Message.ToLower());
+    }
+
+    [Fact]
+    public void Execute_WithNullFileName_ShouldThrowArgumentNullException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(
+            () => new CollisionDataWriterCommand(null!, samplePoints));
+    }
+
+    [Fact]
+    public void Execute_WithNullCollisionPoints_ShouldThrowArgumentNullException()
+    {
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(
+            () => new CollisionDataWriterCommand("test.log", null!));
+    }
+
+    [Fact]
+    public void Execute_WithEmptyCollisionPoints_ShouldCreateEmptyFile()
+    {
+        // Arrange
+        var emptyPoints = new List<int[]>();
+        var fileName = "empty_points_test.log";
+        var writer = new CollisionDataWriterCommand(fileName, emptyPoints);
+
+        // Act
+        writer.Execute();
+
+        // Assert
+        var fullPath = Path.Combine(_testDir, fileName);
+        Assert.True(File.Exists(fullPath));
+        Assert.Empty(File.ReadAllLines(fullPath));
+    }
 }
