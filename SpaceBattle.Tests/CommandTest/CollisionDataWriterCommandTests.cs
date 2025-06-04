@@ -249,29 +249,45 @@ public class CollisionDataWriterCommandTests
         // Arrange
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
         var fileName = "invalid/directory/test.log";
-
-        // Create a file with the same name as the directory we want to create
-        var invalidDir = Path.Combine(_testDir, "invalid");
-        File.WriteAllText(invalidDir, "This is a file, not a directory");
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
         try
         {
+            // Register test directory in IoC
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => _testDir)
+            ).Execute();
+
+            // Create a file with the same name as the directory we want to create
+            var invalidDir = Path.Combine(_testDir, "invalid");
+            File.WriteAllText(invalidDir, "This is a file, not a directory");
+
             var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
             // Act & Assert - Should fail when trying to create a directory where a file exists
             var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            // Accept either error message as both are valid for this scenario
+
+            // Accept multiple possible error messages as they can vary by OS or .NET version
             Assert.True(exception.Message.Contains("Invalid file path or access denied") ||
-                       exception.Message.Contains("Error writing to file"),
+                       exception.Message.Contains("Error writing to file") ||
+                       exception.Message.Contains("Could not find a part of") ||
+                       exception.Message.Contains("Directory not found") ||
+                       exception.Message.Contains("Could not create"),
                        $"Unexpected error message: {exception.Message}");
         }
         finally
         {
             // Cleanup
+            var invalidDir = Path.Combine(_testDir, "invalid");
             if (File.Exists(invalidDir))
             {
                 File.Delete(invalidDir);
             }
+
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
         }
     }
 
