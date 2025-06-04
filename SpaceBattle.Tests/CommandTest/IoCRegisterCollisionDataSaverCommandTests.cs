@@ -1,27 +1,37 @@
 ﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
+using System;
 using System.Collections.Generic;
+using Hwdtech;
+using Hwdtech.Ioc;
 using SpaceBattle.Lib.Commands;
 using Xunit;
 
-public class IoCRegisterCollisionDataSaverCommandTests
+public class IoCRegisterCollisionDataSaverCommandTests : IDisposable
 {
+    private readonly object _rootScope;
+    private bool _disposed;
+    private readonly object _testScope;
+
     public IoCRegisterCollisionDataSaverCommandTests()
     {
         try
         {
+            // Initialize the IoC container implementation
+            new InitScopeBasedIoCImplementationCommand().Execute();
+
             // Get the root scope
-            var rootScope = IoC.Resolve<object>("Scopes.Root");
+            _rootScope = IoC.Resolve<object>("Scopes.Root");
 
             // Create a new scope for the test
-            var scope = IoC.Resolve<object>("Scopes.New", rootScope);
-            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+            _testScope = IoC.Resolve<object>("Scopes.New", _rootScope);
+            IoC.Resolve<ICommand>("Scopes.Current.Set", _testScope).Execute();
 
             // Register required dependencies
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "IoC.Scope.Current",
-                (object[] _) => scope
+                (object[] _) => _testScope
             ).Execute();
 
             // Register storage directory
@@ -42,6 +52,27 @@ public class IoCRegisterCollisionDataSaverCommandTests
         {
             Console.WriteLine($"Error in test setup: {ex}");
             throw;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            // Reset the IoC container to root scope
+            try
+            {
+                if (_rootScope != null)
+                {
+                    IoC.Resolve<ICommand>("Scopes.Current.Set", _rootScope).Execute();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error resetting IoC container: {ex}");
+            }
+
+            _disposed = true;
         }
     }
 
