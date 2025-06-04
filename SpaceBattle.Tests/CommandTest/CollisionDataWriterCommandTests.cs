@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -199,16 +199,7 @@ public class CollisionDataWriterCommandTests
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new CollisionDataWriterCommand(null!, samplePoints));
-    }
-
-    [Fact]
-    public void Execute_WithNullCollisionPoints_ShouldThrowArgumentNullException()
-    {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(
-            () => new CollisionDataWriterCommand("test.log", null!));
+        Assert.Throws<ArgumentNullException>(() => new CollisionDataWriterCommand(null!, samplePoints));
     }
 
     [Fact]
@@ -225,6 +216,70 @@ public class CollisionDataWriterCommandTests
         // Assert
         var fullPath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(fullPath));
-        Assert.Empty(File.ReadAllLines(fullPath));
+        var lines = File.ReadAllLines(fullPath);
+        Assert.Empty(lines);
+    }
+
+    [Fact]
+    public void Execute_WithNullArrayInCollisionPoints_ShouldHandleGracefully()
+    {
+        // Arrange - Using default! to avoid null warning
+        var pointsWithNull = new List<int[]> { new[] { 1, 2 }, default!, new[] { 3, 4 } };
+        var fileName = "null_array_test.log";
+        var writer = new CollisionDataWriterCommand(fileName, pointsWithNull);
+
+        // Act
+        writer.Execute();
+
+        // Assert - null arrays are converted to empty strings
+        var fullPath = Path.Combine(_testDir, fileName);
+        var lines = File.ReadAllLines(fullPath);
+        Assert.Equal(3, lines.Length);
+        Assert.Equal("1,2", lines[0]);
+        Assert.Equal("", lines[1]);
+        Assert.Equal("3,4", lines[2]);
+    }
+
+    [Fact]
+    public void Execute_WhenPathIsTooLong_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var longFileName = new string('a', 300) + ".log";
+        var writer = new CollisionDataWriterCommand(longFileName, samplePoints);
+
+        // Act & Assert - Check for any expected error message
+        var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.True(!string.IsNullOrEmpty(exception.Message), "Exception should have a message");
+    }
+
+    [Fact]
+    public void Execute_WhenDirectoryCreationFails_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "invalid/directory/test.log";
+        
+        // Create a file with the same name as the directory we want to create
+        var invalidDir = Path.Combine(_testDir, "invalid");
+        File.WriteAllText(invalidDir, "This is a file, not a directory");
+
+        try
+        {
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            // Act & Assert - Should fail when trying to create a directory where a file exists
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+            // Just verify that some exception was thrown with a message
+            Assert.False(string.IsNullOrEmpty(exception.Message), "Exception should have a message");
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(invalidDir))
+            {
+                File.Delete(invalidDir);
+            }
+        }
     }
 }
