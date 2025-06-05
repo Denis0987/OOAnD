@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Commands;
+namespace SpaceBattle.Lib.Commands;
 
 using System;
 using System.Collections.Generic;
@@ -34,6 +34,8 @@ public class CollisionDataWriterCommand : ICommand
         }
 
         // Check for invalid file name characters
+        // Note: We're using Path.GetInvalidFileNameChars() to get the list of invalid characters
+        // and checking if any of them exist in the file name
         var invalidChars = Path.GetInvalidFileNameChars();
         if (fileNameOnly.IndexOfAny(invalidChars) >= 0)
         {
