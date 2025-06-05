@@ -509,4 +509,51 @@ public class CollisionDataWriterCommandTests
             }
         }
     }
+
+    [Fact]
+    public void Execute_WhenRootDirectory_ShouldHandleCorrectly()
+    {
+        var rootDir = Path.GetPathRoot(Environment.CurrentDirectory);
+        var fileName = "test_root.log";
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (object[] _) => rootDir
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            var exception = Record.Exception(() => writer.Execute());
+
+            if (exception != null)
+            {
+                // On some systems, writing to root might be allowed, so we accept both behaviors
+                Assert.True(exception is UnauthorizedAccessException ||
+                           exception is IOException ||
+                           exception is System.Security.SecurityException,
+                          $"Unexpected exception type: {exception.GetType().Name}");
+            }
+        }
+        finally
+        {
+            var filePath = Path.Combine(rootDir, fileName);
+            if (File.Exists(filePath))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                }
+                catch { }
+            }
+
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
 }
