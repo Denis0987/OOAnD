@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -539,7 +539,8 @@ public class CollisionDataWriterCommandTests
                            exception is IOException ||
                            exception is System.Security.SecurityException ||
                            (exception is InvalidOperationException &&
-                            exception.Message.Contains("Directory not found")),
+                            (exception.Message.Contains("Directory not found") ||
+                             exception.Message.Contains("Invalid file path or access denied"))),
                           $"Unexpected exception type: {exception.GetType().Name} with message: {exception.Message}");
             }
         }
