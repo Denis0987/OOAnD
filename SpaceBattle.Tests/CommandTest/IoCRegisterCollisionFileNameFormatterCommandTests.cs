@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using Hwdtech;
@@ -84,7 +84,19 @@ public class IoCRegisterCollisionFileNameFormatterCommandTests : IDisposable
 
         Assert.Contains("First argument cannot be null", exception.Message);
     }
+    [Fact]
+    public void IoCRegisterCollisionFileNameFormatterCommand_NullInput_TriggersErrorPath()
+    {
+        // Arrange
+        var command = new IoCRegisterCollisionFileNameFormatterCommand();
+        command.Execute();
 
+        // Act & Assert
+        var exception = Assert.Throws<ArgumentException>(() => 
+            Hwdtech.IoC.Resolve<string>("Collision.FileNameFormatter", null!, "valid"));
+        
+        Assert.Contains("First argument cannot be null", exception.Message);
+    }
     [Fact]
     public void Formatter_WithNullSecondArgument_ShouldThrowArgumentException()
     {

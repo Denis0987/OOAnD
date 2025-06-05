@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -848,7 +848,32 @@ public class CollisionDataWriterCommandTests
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
         }
     }
+    [Fact]
+    public void CollisionDataWriterCommand_HandlesNullArrayInCollisionPoints_ShouldNotThrow()
+    {
+        // Arrange
+        var testData = new List<int[]> { null! }; // Using null-forgiving operator
+        var fileName = Path.GetTempFileName();
+        var command = new CollisionDataWriterCommand(fileName, testData);
 
+        try
+        {
+            // Act - Should handle null arrays by converting them to empty arrays
+            command.Execute();
+
+            // Assert - Verify the file was created and contains the expected content
+            var content = File.ReadAllText(fileName);
+            Assert.Equal("\r\n", content); // Empty array should result in an empty line
+        }
+        finally
+        {
+            // Cleanup
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+        }
+    }
     [Fact]
     public void Execute_WithUnexpectedException_ShouldThrowInvalidOperationException()
     {
