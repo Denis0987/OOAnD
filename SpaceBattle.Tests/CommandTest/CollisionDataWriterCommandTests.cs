@@ -234,7 +234,8 @@ public class CollisionDataWriterCommandTests : IDisposable
         // Arrange & Act & Assert
         var ex = Assert.Throws<ArgumentException>(() =>
             new CollisionDataWriterCommand("test<>.log", new List<int[]> { new[] { 1, 2, 3 } }));
-        Assert.Equal("Invalid file name (Parameter 'fileName')", ex.Message);
+        Assert.Contains("File name contains invalid characters", ex.Message);
+        Assert.Equal("fileName", ex.ParamName);
     }
 
     [Fact]

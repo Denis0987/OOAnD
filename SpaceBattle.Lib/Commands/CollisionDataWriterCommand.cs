@@ -27,11 +27,17 @@ public class CollisionDataWriterCommand : ICommand
         // Get just the file name part for validation
         var fileNameOnly = Path.GetFileName(_fileName);
 
-        // Validate file name for invalid characters
-        if (string.IsNullOrWhiteSpace(fileNameOnly) ||
-            fileNameOnly.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        // Check if the file name is null, empty, or whitespace
+        if (string.IsNullOrWhiteSpace(fileNameOnly))
         {
-            throw new ArgumentException("Invalid file name", nameof(fileName));
+            throw new ArgumentException("File name cannot be empty or whitespace", nameof(fileName));
+        }
+
+        // Check for invalid file name characters
+        var invalidChars = Path.GetInvalidFileNameChars();
+        if (fileNameOnly.IndexOfAny(invalidChars) >= 0)
+        {
+            throw new ArgumentException("File name contains invalid characters", nameof(fileName));
         }
     }
 
