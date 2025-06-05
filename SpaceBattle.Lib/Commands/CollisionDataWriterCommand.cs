@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Commands;
+﻿namespace SpaceBattle.Lib.Commands;
 
 using System;
 using System.Collections.Generic;
