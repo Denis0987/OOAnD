@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -579,6 +579,7 @@ public class CollisionDataWriterCommandTests
                 {
                     Directory.Delete(testDir, true);
                 }
+
                 File.WriteAllText(testDir, "This is a file, not a directory");
 
                 IoC.Resolve<ICommand>(
