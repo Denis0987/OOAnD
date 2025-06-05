@@ -23,13 +23,23 @@ public class CollisionDataWriterCommand : ICommand
         _collisionPoints = collisionPoints ?? throw new ArgumentNullException(nameof(collisionPoints));
         _fileSystem = fileSystem ?? new DefaultFileSystem();
         _directoryProvider = directoryProvider ?? new DefaultStorageDirectoryProvider();
+
+        // Get just the file name part for validation
+        var fileNameOnly = Path.GetFileName(_fileName);
+
+        // Validate file name for invalid characters
+        if (string.IsNullOrWhiteSpace(fileNameOnly) ||
+            fileNameOnly.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            throw new ArgumentException("Invalid file name", nameof(fileName));
+        }
     }
 
     public void Execute()
     {
         var storageDir = _directoryProvider.GetStorageDirectory();
 
-        if (string.IsNullOrEmpty(storageDir))
+        if (string.IsNullOrWhiteSpace(storageDir))
         {
             throw new InvalidOperationException("Storage directory is not set");
         }

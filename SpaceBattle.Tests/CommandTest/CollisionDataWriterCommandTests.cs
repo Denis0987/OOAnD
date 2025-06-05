@@ -129,16 +129,36 @@ public class CollisionDataWriterCommandTests : IDisposable
     public void Execute_WithNestedDirectories_CreatesDirectories()
     {
         // Arrange
-        var fileName = Path.Combine("nested", "dir", "test.log");
-        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+        var directory = Path.Combine("nested", "dir");
+        var fileName = "test.log";
+        var fullPath = Path.Combine(_testDir, directory, fileName);
+
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(false);
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
+            .Callback<string, IEnumerable<string>>((path, _) =>
+            {
+                // Verify the path contains our directory structure
+                Assert.Contains(directory, path);
+                Assert.EndsWith(fileName, path);
+            });
+
+        var writer = new CollisionDataWriterCommand(
+            Path.Combine(directory, fileName),
+            new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object,
+            mockDirProvider.Object);
 
         // Act
         writer.Execute();
 
-        // Assert
-        var fullPath = Path.Combine(_testDir, fileName);
-        Assert.True(File.Exists(fullPath));
+        // Assert - Verify directory creation was attempted
+        mockFileSystem.Verify(f => f.CreateDirectory(It.Is<string>(d => d.Contains(directory))), Times.Once);
+        mockFileSystem.Verify(f => f.WriteAllLines(It.Is<string>(p => p.Contains(directory) && p.EndsWith(fileName)),
+            It.IsAny<IEnumerable<string>>()), Times.Once);
     }
 
     [Fact]
@@ -211,14 +231,10 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithInvalidFileName_ThrowsInvalidOperation()
     {
-        // Arrange
-        var invalidFileName = "test<>.log";
-        var writer = new CollisionDataWriterCommand(invalidFileName, new List<int[]> { new[] { 1, 2, 3 } });
-
-        // Act & Assert
-        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-        Assert.True(ex.Message.Contains("Invalid file path or access denied") ||
-                   ex.Message.Contains("Error writing to file"));
+        // Arrange & Act & Assert
+        var ex = Assert.Throws<ArgumentException>(() =>
+            new CollisionDataWriterCommand("test<>.log", new List<int[]> { new[] { 1, 2, 3 } }));
+        Assert.Equal("Invalid file name (Parameter 'fileName')", ex.Message);
     }
 
     [Fact]
