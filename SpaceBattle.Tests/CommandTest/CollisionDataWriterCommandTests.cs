@@ -818,7 +818,7 @@ public class CollisionDataWriterCommandTests : IDisposable
     {
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
         var fileName = "root_test.log";
-        var testDir = Path.GetPathRoot(Environment.CurrentDirectory); // Корневая директория (например, "C:\")
+        var testDir = Path.GetPathRoot(Environment.CurrentDirectory) ?? string.Empty; // Корневая директория (например, "C:\")
 
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
@@ -846,7 +846,7 @@ public class CollisionDataWriterCommandTests : IDisposable
             }
             else
             {
-                var fullPath = Path.Combine(testDir, fileName);
+                var fullPath = Path.Combine(testDir ?? string.Empty, fileName);
                 Assert.True(File.Exists(fullPath));
                 var lines = File.ReadAllLines(fullPath);
                 Assert.Single(lines);
