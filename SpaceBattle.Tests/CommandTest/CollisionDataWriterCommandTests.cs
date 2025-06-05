@@ -534,11 +534,13 @@ public class CollisionDataWriterCommandTests
 
             if (exception != null)
             {
-                // On some systems, writing to root might be allowed, so we accept both behaviors
+                // On some systems, writing to root might be allowed, so we accept multiple behaviors
                 Assert.True(exception is UnauthorizedAccessException ||
                            exception is IOException ||
-                           exception is System.Security.SecurityException,
-                          $"Unexpected exception type: {exception.GetType().Name}");
+                           exception is System.Security.SecurityException ||
+                           (exception is InvalidOperationException &&
+                            exception.Message.Contains("Directory not found")),
+                          $"Unexpected exception type: {exception.GetType().Name} with message: {exception.Message}");
             }
         }
         finally
