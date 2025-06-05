@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -507,6 +507,7 @@ public class CollisionDataWriterCommandTests
             {
                 File.Delete(fullPath);
             }
+
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
         }
     }
@@ -639,6 +640,7 @@ public class CollisionDataWriterCommandTests
                 File.SetAttributes(Path.Combine(testDir, "readonly.log"), FileAttributes.Normal);
                 File.Delete(Path.Combine(testDir, "readonly.log"));
             }
+
             if (Directory.Exists(testDir))
             {
                 Directory.Delete(testDir, true);
@@ -770,10 +772,10 @@ public class CollisionDataWriterCommandTests
                 ).Execute();
 
                 var writer = new CollisionDataWriterCommand(fileName, samplePoints);
-                
+
                 // The command should create the directories and write the file
                 writer.Execute();
-                
+
                 // Verify the file was created with correct content
                 var fullPath = Path.Combine(deepDir, fileName);
                 Assert.True(File.Exists(fullPath));
@@ -842,6 +844,7 @@ public class CollisionDataWriterCommandTests
                 File.SetAttributes(fullPath, FileAttributes.Normal);
                 File.Delete(fullPath);
             }
+
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
         }
     }
@@ -902,10 +905,10 @@ public class CollisionDataWriterCommandTests
                 ).Execute();
 
                 var writer = new CollisionDataWriterCommand(fileName, samplePoints);
-                
+
                 // The command should create the nested directory and write the file
                 writer.Execute();
-                
+
                 // Verify the file was created with correct content
                 var fullPath = Path.Combine(testDir, fileName);
                 Assert.True(File.Exists(fullPath));
