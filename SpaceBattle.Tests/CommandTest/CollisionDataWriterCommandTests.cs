@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -863,7 +863,7 @@ public class CollisionDataWriterCommandTests
 
             // Assert - Verify the file was created and contains the expected content
             var content = File.ReadAllText(fileName);
-            Assert.Equal("\r\n", content); // Empty array should result in an empty line
+            Assert.Equal(Environment.NewLine, content); // Empty array should result in an empty line
         }
         finally
         {
