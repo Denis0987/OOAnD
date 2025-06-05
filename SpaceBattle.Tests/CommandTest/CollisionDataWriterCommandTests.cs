@@ -10,7 +10,7 @@ using Xunit;
 
 public class CollisionDataWriterCommandTests : IDisposable
 {
-    private readonly string _testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTests");
+    private readonly string _testDir = Path.Combine(Path.GetTempPath() ?? string.Empty, "SpaceBattleTests");
     private bool _disposed = false;
 
     public CollisionDataWriterCommandTests()
