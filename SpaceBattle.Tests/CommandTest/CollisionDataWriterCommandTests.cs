@@ -226,20 +226,28 @@ public class CollisionDataWriterCommandTests : IDisposable
     {
         // Arrange
         var fileName = "null_array_test.log";
-        var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, null, new[] { 4, 5, 6 } };
-        var writer = new CollisionDataWriterCommand(fileName, collisionPoints);
+        var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, null!, new[] { 4, 5, 6 } };
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        var writer = new CollisionDataWriterCommand(fileName, collisionPoints, mockFileSystem.Object, mockDirProvider.Object);
 
         // Act
         writer.Execute();
 
         // Assert
-        var filePath = Path.Combine(_testDir, fileName);
-        Assert.True(File.Exists(filePath));
-        var lines = File.ReadAllLines(filePath);
-        Assert.Equal(3, lines.Length);
-        Assert.Equal("1,2,3", lines[0]);
-        Assert.Equal("", lines[1]);
-        Assert.Equal("4,5,6", lines[2]);
+        mockFileSystem.Verify(f => f.WriteAllLines(
+            It.Is<string>(p => p.EndsWith(fileName)),
+            It.Is<IEnumerable<string>>(lines =>
+                lines.Count() == 3 &&
+                lines.ElementAt(0) == "1,2,3" &&
+                lines.ElementAt(1) == "" &&
+                lines.ElementAt(2) == "4,5,6"
+            )
+        ), Times.Once);
     }
 
     [Fact]

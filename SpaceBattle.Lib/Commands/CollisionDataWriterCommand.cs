@@ -16,8 +16,8 @@ public class CollisionDataWriterCommand : ICommand
     public CollisionDataWriterCommand(
         string fileName,
         IList<int[]> collisionPoints,
-        IFileSystem fileSystem = null,
-        IStorageDirectoryProvider directoryProvider = null)
+        IFileSystem? fileSystem = null,
+        IStorageDirectoryProvider? directoryProvider = null)
     {
         _fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         _collisionPoints = collisionPoints ?? throw new ArgumentNullException(nameof(collisionPoints));
@@ -49,7 +49,7 @@ public class CollisionDataWriterCommand : ICommand
 
             _fileSystem.WriteAllLines(fullPath, lines);
         }
-        catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is UnauthorizedAccessException || ex is PathTooLongException)
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or UnauthorizedAccessException or PathTooLongException)
         {
             throw new InvalidOperationException("Invalid file path or access denied", ex);
         }
@@ -72,7 +72,7 @@ public class CollisionDataWriterCommand : ICommand
 
     public interface IStorageDirectoryProvider
     {
-        string GetStorageDirectory();
+        string? GetStorageDirectory();
     }
 
     private class DefaultFileSystem : IFileSystem
@@ -84,6 +84,6 @@ public class CollisionDataWriterCommand : ICommand
 
     private class DefaultStorageDirectoryProvider : IStorageDirectoryProvider
     {
-        public string GetStorageDirectory() => IoC.Resolve<string>("Collision.StorageDirectory");
+        public string? GetStorageDirectory() => IoC.Resolve<string>("Collision.StorageDirectory");
     }
 }
