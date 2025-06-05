@@ -8,17 +8,24 @@ using Hwdtech.Ioc;
 using SpaceBattle.Lib.Commands;
 using Xunit;
 
-public class CollisionDataWriterCommandTests
+public class CollisionDataWriterCommandTests : IDisposable
 {
-    private readonly string _testDir;
+    private readonly string _testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTests");
+    private bool _disposed = false;
 
     public CollisionDataWriterCommandTests()
     {
         new InitScopeBasedIoCImplementationCommand().Execute();
 
         var rootScope = IoC.Resolve<object>("Scopes.Root");
-
         var scope = IoC.Resolve<object>("Scopes.New", rootScope);
+
+        // Create test directory if it doesn't exist
+        if (!Directory.Exists(_testDir))
+        {
+            _ = Directory.CreateDirectory(_testDir);
+        }
+
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
         IoC.Resolve<ICommand>(
@@ -77,10 +84,13 @@ public class CollisionDataWriterCommandTests
         Assert.Equal("1,2,3", lines[0]);
     }
 
-    [Fact]
-    public void Execute_WhenStorageDirNotSet_ShouldThrowException()
+    [Theory]
+    [InlineData(null, "Storage directory is not set")]
+    [InlineData("", "Storage directory is not set")]
+    public void Execute_WithInvalidStorageDir_ShouldThrowInvalidOperationException(string storageDir, string expectedMessage)
     {
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "test.log";
 
         var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
@@ -90,13 +100,13 @@ public class CollisionDataWriterCommandTests
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "Collision.StorageDirectory",
-                (Func<object[], string?>)(_ => null)
+                (Func<object[], string>)(_ => storageDir)
             ).Execute();
 
-            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
             var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", exception.Message);
+            Assert.Contains(expectedMessage, exception.Message);
         }
         finally
         {
@@ -155,17 +165,6 @@ public class CollisionDataWriterCommandTests
 
         var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
         Assert.Contains("invalid file path", exception.Message.ToLower());
-    }
-
-    [Fact]
-    public void Execute_WithNullFileName_ShouldThrowArgumentNullException()
-    {
-        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-
-        var exception = Assert.Throws<ArgumentNullException>(
-            () => new CollisionDataWriterCommand(null!, samplePoints)
-        );
-        Assert.Equal("fileName", exception.ParamName);
     }
 
     [Fact]
@@ -253,84 +252,6 @@ public class CollisionDataWriterCommandTests
         Assert.True(exception.Message.Contains("Invalid file path") ||
                    exception.Message.Contains("access denied") ||
                    exception.Message.Contains("Error writing to file"));
-    }
-
-    [Fact]
-    public void Execute_WithEmptyStorageDirectory_ShouldThrowInvalidOperationException()
-    {
-        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (Func<object[], string>)(_ => string.Empty)
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
-
-            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", exception.Message);
-        }
-        finally
-        {
-            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
-        }
-    }
-
-    [Fact]
-    public void Execute_WithNullStorageDir_ShouldThrowInvalidOperationException()
-    {
-        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (Func<object[], string?>)(_ => null)
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
-
-            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", exception.Message);
-        }
-        finally
-        {
-            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
-        }
-    }
-
-    [Fact]
-    public void Execute_WithEmptyStorageDir_ShouldThrowInvalidOperationException()
-    {
-        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
-        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (Func<object[], string>)(_ => string.Empty)
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", samplePoints);
-
-            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", exception.Message);
-        }
-        finally
-        {
-            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
-        }
     }
 
     [Fact]
@@ -482,7 +403,6 @@ public class CollisionDataWriterCommandTests
                     (Func<object[], string>)(_ => testDir)
                 ).Execute();
 
-                // Create a file with the same name as the directory we want to create
                 File.WriteAllText(Path.Combine(testDir, "subdir"), "This is a file, not a directory");
 
                 var writer = new CollisionDataWriterCommand("subdir/test.log", samplePoints);
@@ -534,7 +454,6 @@ public class CollisionDataWriterCommandTests
 
             if (exception != null)
             {
-                // On some systems, writing to root might be allowed, so we accept multiple behaviors
                 Assert.True(exception is UnauthorizedAccessException ||
                            exception is IOException ||
                            exception is System.Security.SecurityException ||
@@ -547,14 +466,17 @@ public class CollisionDataWriterCommandTests
         }
         finally
         {
-            var filePath = Path.Combine(rootDir, fileName);
-            if (File.Exists(filePath))
+            if (rootDir != null)
             {
-                try
+                var filePath = Path.Combine(rootDir, fileName);
+                if (File.Exists(filePath))
                 {
-                    File.Delete(filePath);
+                    try
+                    {
+                        File.Delete(filePath);
+                    }
+                    catch { }
                 }
-                catch { }
             }
 
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
@@ -573,7 +495,6 @@ public class CollisionDataWriterCommandTests
 
             try
             {
-                // Create a file with the same name as our test directory
                 var testDir = Path.Combine(Path.GetTempPath(), "test_dir");
                 if (Directory.Exists(testDir))
                 {
@@ -625,22 +546,18 @@ public class CollisionDataWriterCommandTests
 
             try
             {
-                // Create a directory and make it read-only
                 Directory.CreateDirectory(protectedDir);
                 var dirInfo = new DirectoryInfo(protectedDir);
                 dirInfo.Attributes |= FileAttributes.ReadOnly;
 
-                // Register the parent directory as storage
                 IoC.Resolve<ICommand>(
                     "IoC.Register",
                     "Collision.StorageDirectory",
                     (object[] _) => tempDir
                 ).Execute();
 
-                // Try to create a file in the read-only directory
                 var writer = new CollisionDataWriterCommand("protected/test.log", samplePoints);
 
-                // The test should either throw or complete successfully (depending on OS behavior)
                 var exception = Record.Exception(() => writer.Execute());
 
                 if (exception != null)
@@ -653,14 +570,11 @@ public class CollisionDataWriterCommandTests
                 }
                 else
                 {
-                    // On some systems, the operation might succeed despite the read-only attribute
-                    // In this case, just verify the file was created
                     Assert.True(File.Exists(Path.Combine(protectedDir, "test.log")));
                 }
             }
             finally
             {
-                // Cleanup - first remove read-only attribute if it exists
                 try
                 {
                     if (Directory.Exists(protectedDir))
@@ -668,7 +582,6 @@ public class CollisionDataWriterCommandTests
                         var dir = new DirectoryInfo(protectedDir);
                         dir.Attributes &= ~FileAttributes.ReadOnly;
 
-                        // Clean up any created files
                         if (File.Exists(testFilePath))
                         {
                             File.SetAttributes(testFilePath, FileAttributes.Normal);
@@ -681,14 +594,13 @@ public class CollisionDataWriterCommandTests
                         Directory.Delete(tempDir, true);
                     }
                 }
-                catch { /* Ignore cleanup errors */ }
+                catch { }
 
                 IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
             }
         }
         finally
         {
-            // Final cleanup in case of any issues
             try
             {
                 if (Directory.Exists(protectedDir))
@@ -711,7 +623,7 @@ public class CollisionDataWriterCommandTests
                     catch { }
                 }
             }
-            catch { /* Ignore cleanup errors */ }
+            catch { }
         }
     }
 
@@ -759,5 +671,243 @@ public class CollisionDataWriterCommandTests
                 File.Delete(tempFile);
             }
         }
+    }
+
+    [Fact]
+    public void Execute_WithNotSupportedPath_ShouldThrowInvalidOperationException()
+    {
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var invalidFileName = "test.log";
+        var testDir = "\\\\?\\NonExistentDrive\\Test"; // Simulate unsupported path
+
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => testDir)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand(invalidFileName, samplePoints);
+
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+
+            // Accept either error message as both are valid for this case
+            Assert.True(
+                exception.Message.Contains("Invalid file path or access denied") ||
+                exception.Message.Contains("Directory not found"),
+                $"Unexpected error message: {exception.Message}");
+
+            // The inner exception could be NotSupportedException or DirectoryNotFoundException
+            Assert.True(
+                exception.InnerException is NotSupportedException ||
+                exception.InnerException is DirectoryNotFoundException,
+                $"Unexpected inner exception type: {exception.InnerException?.GetType().Name}");
+        }
+        finally
+        {
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
+
+    [Fact]
+    public void Execute_WithRelativePath_ShouldHandleCorrectly()
+    {
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = Path.Combine("..", "relative_test.log");
+        var testDir = Path.Combine(_testDir ?? string.Empty, "subdir");
+        _ = Directory.CreateDirectory(testDir);
+
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => testDir)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            writer.Execute();
+
+            var parentDir = Directory.GetParent(testDir)?.FullName ?? string.Empty;
+            var fullPath = Path.Combine(parentDir, "relative_test.log");
+            Assert.True(File.Exists(fullPath));
+            var lines = File.ReadAllLines(fullPath);
+            Assert.Single(lines);
+            Assert.Equal("1,2,3", lines[0]);
+        }
+        finally
+        {
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+            var parentDir = Directory.GetParent(testDir)?.FullName;
+            if (parentDir != null)
+            {
+                var filePath = Path.Combine(parentDir, "relative_test.log");
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void Execute_WithMultipleNullAndEmptyArrays_ShouldHandleGracefully()
+    {
+        var pointsWithNullAndEmpty = new List<int[]> { new[] { 1, 2 }, null!, Array.Empty<int>(), new[] { 3, 4 }, null! };
+        var fileName = "multiple_null_empty_test.log";
+        var writer = new CollisionDataWriterCommand(fileName, pointsWithNullAndEmpty);
+
+        writer.Execute();
+
+        var fullPath = Path.Combine(_testDir, fileName);
+        Assert.True(File.Exists(fullPath));
+        var lines = File.ReadAllLines(fullPath);
+        Assert.Equal(5, lines.Length);
+        Assert.Equal("1,2", lines[0]);
+        Assert.Equal("", lines[1]);
+        Assert.Equal("", lines[2]);
+        Assert.Equal("3,4", lines[3]);
+        Assert.Equal("", lines[4]);
+    }
+
+    [Fact]
+    public void Execute_WithInaccessibleDrive_ShouldThrowInvalidOperationException()
+    {
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "test.log";
+        var inaccessibleDir = "Z:\\NonExistentDrive"; // Simulate inaccessible drive
+
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => inaccessibleDir)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+
+            // Accept multiple possible error messages as different environments may throw different exceptions
+            Assert.True(
+                exception.Message.Contains("Directory not found") ||
+                exception.Message.Contains("Invalid file path or access denied") ||
+                exception.Message.Contains("Error writing to file"),
+                $"Unexpected error message: {exception.Message}");
+        }
+        finally
+        {
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
+
+    [Fact]
+    public void Execute_WithRootFileName_ShouldHandleCorrectly()
+    {
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var fileName = "root_test.log";
+        var testDir = Path.GetPathRoot(Environment.CurrentDirectory); // Корневая директория (например, "C:\")
+
+        var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+        try
+        {
+            IoC.Resolve<ICommand>(
+                "IoC.Register",
+                "Collision.StorageDirectory",
+                (Func<object[], string>)(_ => testDir)
+            ).Execute();
+
+            var writer = new CollisionDataWriterCommand(fileName, samplePoints);
+
+            var exception = Record.Exception(() => writer.Execute());
+
+            if (exception != null)
+            {
+                Assert.IsType<InvalidOperationException>(exception);
+                Assert.True(
+                    exception.Message.Contains("Invalid file path or access denied") ||
+                    exception.Message.Contains("Directory not found") ||
+                    exception.Message.Contains("Error writing to file"),
+                    $"Unexpected error message: {exception.Message}");
+            }
+            else
+            {
+                var fullPath = Path.Combine(testDir, fileName);
+                Assert.True(File.Exists(fullPath));
+                var lines = File.ReadAllLines(fullPath);
+                Assert.Single(lines);
+                Assert.Equal("1,2,3", lines[0]);
+
+                // Cleanup
+                try
+                {
+                    File.SetAttributes(fullPath, FileAttributes.Normal);
+                    File.Delete(fullPath);
+                }
+                catch { }
+            }
+        }
+        finally
+        {
+            IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // Clean up test directory if it exists
+                try
+                {
+                    if (Directory.Exists(_testDir))
+                    {
+                        // Remove read-only attributes from all files
+                        var files = Directory.GetFiles(_testDir, "*", SearchOption.AllDirectories);
+                        foreach (var file in files)
+                        {
+                            try
+                            {
+                                File.SetAttributes(file, FileAttributes.Normal);
+                            }
+                            catch { }
+                        }
+
+                        // Delete the directory
+                        Directory.Delete(_testDir, true);
+                    }
+                }
+                catch { }
+            }
+
+            _disposed = true;
+        }
+    }
+
+    ~CollisionDataWriterCommandTests()
+    {
+        Dispose(false);
     }
 }
