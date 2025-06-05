@@ -1,4 +1,4 @@
-namespace SpaceBattle.Lib.Tests.CommandTests;
+﻿namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -19,17 +19,18 @@ public class CollisionDataWriterCommandTests : IDisposable
 
         var rootScope = IoC.Resolve<object>("Scopes.Root");
         var scope = IoC.Resolve<object>("Scopes.New", rootScope);
- 
+
         // Create test directory in a cross-platform way
         _testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTests", Guid.NewGuid().ToString("N"));
-        
+
         // Ensure the directory exists and is empty
         if (Directory.Exists(_testDir))
         {
             Directory.Delete(_testDir, recursive: true);
         }
+
         Directory.CreateDirectory(_testDir);
- 
+
         // Set up IoC
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
