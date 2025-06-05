@@ -251,6 +251,179 @@ public class CollisionDataWriterCommandTests : IDisposable
     }
 
     [Fact]
+    public void Execute_WhenFileSystemThrowsUnauthorizedAccess_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var fileName = "unauthorized.log";
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
+            .Throws<UnauthorizedAccessException>();
+
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("Invalid file path or access denied", ex.Message);
+        Assert.IsType<UnauthorizedAccessException>(ex.InnerException);
+    }
+
+    [Fact]
+    public void Execute_WhenDiskIsFull_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var fileName = "disk_full_test.log";
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        // Simulate disk full scenario
+        var ioException = new IOException("Insufficient disk space", new IOException("The disk is full"));
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
+            .Throws(ioException);
+
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("Error writing to file", ex.Message);
+        Assert.Same(ioException, ex.InnerException);
+    }
+
+    [Fact]
+    public void Execute_WithCustomFileSystemAndDirectoryProvider_WorksCorrectly()
+    {
+        // Arrange
+        var fileName = "custom_impl_test.log";
+        var expectedLines = new[] { "1,2,3", "4,5,6" };
+        var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, new[] { 4, 5, 6 } };
+
+        var customFileSystem = new CustomFileSystem();
+        var customDirProvider = new CustomDirectoryProvider(_testDir);
+
+        var writer = new CollisionDataWriterCommand(fileName, collisionPoints, customFileSystem, customDirProvider);
+
+        // Act
+        writer.Execute();
+
+        // Assert - Verify the file was written with correct content
+        var filePath = Path.Combine(_testDir, fileName);
+        Assert.True(File.Exists(filePath));
+        var actualLines = File.ReadAllLines(filePath);
+        Assert.Equal(expectedLines, actualLines);
+    }
+
+    [Fact]
+    public void Execute_WithLargeNumberOfCollisionPoints_HandlesCorrectly()
+    {
+        // Arrange
+        var fileName = "large_file_test.log";
+        var random = new Random();
+        const int pointCount = 10000; // 10,000 points
+
+        // Generate large set of collision points
+        var collisionPoints = new List<int[]>();
+        var expectedLines = new List<string>();
+
+        for (var i = 0; i < pointCount; i++)
+        {
+            var x = random.Next(1000);
+            var y = random.Next(1000);
+            var z = random.Next(1000);
+            var point = new[] { x, y, z };
+            collisionPoints.Add(point);
+            expectedLines.Add($"{x},{y},{z}");
+        }
+
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        // Capture the written lines for verification
+        IEnumerable<string>? actualLines = null;
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
+            .Callback<string, IEnumerable<string>>((_, lines) => actualLines = lines.ToList());
+
+        var writer = new CollisionDataWriterCommand(fileName, collisionPoints,
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        // Act
+        writer.Execute();
+
+        // Assert
+        Assert.NotNull(actualLines);
+        Assert.Equal(pointCount, actualLines!.Count());
+
+        // Verify first and last points to ensure correct ordering and content
+        Assert.Equal(expectedLines[0], actualLines!.First());
+        Assert.Equal(expectedLines[pointCount - 1], actualLines!.Last());
+
+        // Verify all lines were written correctly
+        Assert.Equal(expectedLines, actualLines);
+    }
+
+    [Fact]
+    public void Execute_WhenDirectoryCreationFails_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var fileName = "directory_creation_fail.log";
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        var testDir = Path.Combine(_testDir, "nonexistent");
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(testDir);
+
+        // Simulate directory doesn't exist and creation fails
+        mockFileSystem.Setup(f => f.DirectoryExists(testDir)).Returns(false);
+        mockFileSystem.Setup(f => f.CreateDirectory(testDir))
+            .Throws(new UnauthorizedAccessException("Access to the path is denied"));
+
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("Invalid file path or access denied", ex.Message);
+        Assert.IsType<UnauthorizedAccessException>(ex.InnerException);
+
+        // Verify WriteAllLines was never called since directory creation failed
+        mockFileSystem.Verify(
+            f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()),
+            Times.Never);
+    }
+
+    private class CustomFileSystem : CollisionDataWriterCommand.IFileSystem
+    {
+        public void CreateDirectory(string path) => Directory.CreateDirectory(path);
+
+        public bool DirectoryExists(string path) => Directory.Exists(path);
+
+        public void WriteAllLines(string path, IEnumerable<string> contents) =>
+            File.WriteAllLines(path, contents);
+    }
+
+    private class CustomDirectoryProvider : CollisionDataWriterCommand.IStorageDirectoryProvider
+    {
+        private readonly string _directory;
+
+        public CustomDirectoryProvider(string directory)
+        {
+            _directory = directory;
+        }
+
+        public string? GetStorageDirectory() => _directory;
+    }
+
+    [Fact]
     public void Execute_WithEmptyArrayInCollisionPoints_HandlesGracefully()
     {
         // Arrange
