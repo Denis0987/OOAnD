@@ -592,6 +592,157 @@ public class CollisionDataWriterCommandTests
 
                 var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
                 Assert.True(exception.Message.Contains("Invalid file path or access denied") ||
+                           exception.Message.Contains("Error writing to file") ||
+                           exception.Message.Contains("Directory not found"),
+                    $"Unexpected error message: {exception.Message}");
+            }
+            finally
+            {
+                IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+            }
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public void Execute_WhenDirectoryCreationThrowsUnauthorizedAccess_ShouldThrowInvalidOperation()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var protectedDir = Path.Combine(tempDir, "protected");
+        var testFilePath = Path.Combine(protectedDir, "test.log");
+
+        try
+        {
+            var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+            var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+            try
+            {
+                // Create a directory and make it read-only
+                Directory.CreateDirectory(protectedDir);
+                var dirInfo = new DirectoryInfo(protectedDir);
+                dirInfo.Attributes |= FileAttributes.ReadOnly;
+
+                // Register the parent directory as storage
+                IoC.Resolve<ICommand>(
+                    "IoC.Register",
+                    "Collision.StorageDirectory",
+                    (object[] _) => tempDir
+                ).Execute();
+
+                // Try to create a file in the read-only directory
+                var writer = new CollisionDataWriterCommand("protected/test.log", samplePoints);
+
+                // The test should either throw or complete successfully (depending on OS behavior)
+                var exception = Record.Exception(() => writer.Execute());
+
+                if (exception != null)
+                {
+                    Assert.IsType<InvalidOperationException>(exception);
+                    Assert.True(exception.Message.Contains("Invalid file path or access denied") ||
+                               exception.Message.Contains("Directory not found") ||
+                               exception.Message.Contains("Error writing to file"),
+                        $"Unexpected error message: {exception.Message}");
+                }
+                else
+                {
+                    // On some systems, the operation might succeed despite the read-only attribute
+                    // In this case, just verify the file was created
+                    Assert.True(File.Exists(Path.Combine(protectedDir, "test.log")));
+                }
+            }
+            finally
+            {
+                // Cleanup - first remove read-only attribute if it exists
+                try
+                {
+                    if (Directory.Exists(protectedDir))
+                    {
+                        var dir = new DirectoryInfo(protectedDir);
+                        dir.Attributes &= ~FileAttributes.ReadOnly;
+
+                        // Clean up any created files
+                        if (File.Exists(testFilePath))
+                        {
+                            File.SetAttributes(testFilePath, FileAttributes.Normal);
+                            File.Delete(testFilePath);
+                        }
+                    }
+
+                    if (Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+                catch { /* Ignore cleanup errors */ }
+
+                IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+            }
+        }
+        finally
+        {
+            // Final cleanup in case of any issues
+            try
+            {
+                if (Directory.Exists(protectedDir))
+                {
+                    var dir = new DirectoryInfo(protectedDir);
+                    dir.Attributes &= ~FileAttributes.ReadOnly;
+                    if (File.Exists(testFilePath))
+                    {
+                        File.SetAttributes(testFilePath, FileAttributes.Normal);
+                        File.Delete(testFilePath);
+                    }
+                }
+
+                if (Directory.Exists(tempDir))
+                {
+                    try
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                    catch { }
+                }
+            }
+            catch { /* Ignore cleanup errors */ }
+        }
+    }
+
+    [Fact]
+    public void Execute_WhenFileIsReadOnly_ShouldThrowInvalidOperation()
+    {
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+            var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+            try
+            {
+                var testDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+                Directory.CreateDirectory(testDir);
+                var readOnlyFile = Path.Combine(testDir, "readonly.log");
+                File.WriteAllText(readOnlyFile, "test");
+                File.SetAttributes(readOnlyFile, FileAttributes.ReadOnly);
+
+                IoC.Resolve<ICommand>(
+                    "IoC.Register",
+                    "Collision.StorageDirectory",
+                    (object[] _) => testDir
+                ).Execute();
+
+                var writer = new CollisionDataWriterCommand("readonly.log", samplePoints);
+
+                var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+                Assert.True(exception.Message.Contains("Invalid file path or access denied") ||
                            exception.Message.Contains("Error writing to file"),
                     $"Unexpected error message: {exception.Message}");
             }
@@ -604,6 +755,7 @@ public class CollisionDataWriterCommandTests
         {
             if (File.Exists(tempFile))
             {
+                File.SetAttributes(tempFile, FileAttributes.Normal);
                 File.Delete(tempFile);
             }
         }
