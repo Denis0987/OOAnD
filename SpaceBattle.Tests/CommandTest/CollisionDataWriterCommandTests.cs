@@ -455,4 +455,58 @@ public class CollisionDataWriterCommandTests
             }
         }
     }
+
+    [Fact]
+    public void Execute_WhenSecurityExceptionOccurs_ShouldThrowWithCorrectMessage()
+    {
+        var samplePoints = new List<int[]> { new[] { 1, 2, 3 } };
+        var testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleSecureTest");
+
+        if (Directory.Exists(testDir))
+        {
+            Directory.Delete(testDir, true);
+        }
+
+        Directory.CreateDirectory(testDir);
+
+        try
+        {
+            var scope = IoC.Resolve<object>("Scopes.New", IoC.Resolve<object>("Scopes.Root"));
+            IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
+
+            try
+            {
+                IoC.Resolve<ICommand>(
+                    "IoC.Register",
+                    "Collision.StorageDirectory",
+                    (Func<object[], string>)(_ => testDir)
+                ).Execute();
+
+                // Create a file with the same name as the directory we want to create
+                File.WriteAllText(Path.Combine(testDir, "subdir"), "This is a file, not a directory");
+
+                var writer = new CollisionDataWriterCommand("subdir/test.log", samplePoints);
+
+                var exception = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+                Assert.True(exception.Message.Contains("Invalid file path or access denied") ||
+                           exception.Message.Contains("Error writing to file"),
+                    $"Unexpected error message: {exception.Message}");
+            }
+            finally
+            {
+                IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(testDir))
+            {
+                try
+                {
+                    Directory.Delete(testDir, true);
+                }
+                catch { }
+            }
+        }
+    }
 }
