@@ -401,12 +401,73 @@ public class CollisionDataWriterCommandTests : IDisposable
             Times.Never);
     }
 
+    [Fact]
+    public void Execute_WhenDirectoryIsReadOnly_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var fileName = "readonly_test.log";
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        var testDir = Path.Combine(_testDir, "readonly_dir");
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(testDir);
+
+        // Directory exists but is read-only
+        mockFileSystem.Setup(f => f.DirectoryExists(testDir)).Returns(true);
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
+            .Throws(new UnauthorizedAccessException("Access to the path is denied"));
+
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        // Act & Assert
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("Invalid file path or access denied", ex.Message);
+        Assert.IsType<UnauthorizedAccessException>(ex.InnerException);
+    }
+
+    [Fact]
+    public void Execute_WhenPathIsRoot_HandlesCorrectly()
+    {
+        // This test verifies behavior when the path is at the root of the drive
+        // Arrange
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        // Create a root directory path
+        var rootPath = Path.GetPathRoot(Path.GetFullPath("."))!;
+        var fileName = "test.log";
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(rootPath);
+
+        // Mock the file system to handle the operations
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+        mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()));
+
+        var writer = new CollisionDataWriterCommand(
+            fileName,
+            new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object,
+            mockDirProvider.Object
+        );
+
+        // Act
+        writer.Execute();
+
+        // Assert - Verify WriteAllLines was called
+        mockFileSystem.Verify(
+            f => f.WriteAllLines(
+                It.Is<string>(p => p.EndsWith(fileName)),
+                It.IsAny<IEnumerable<string>>()
+            ),
+            Times.Once
+        );
+    }
+
     private class CustomFileSystem : CollisionDataWriterCommand.IFileSystem
     {
         public void CreateDirectory(string path) => Directory.CreateDirectory(path);
-
         public bool DirectoryExists(string path) => Directory.Exists(path);
-
         public void WriteAllLines(string path, IEnumerable<string> contents) =>
             File.WriteAllLines(path, contents);
     }
