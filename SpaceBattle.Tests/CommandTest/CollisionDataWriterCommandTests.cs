@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using Xunit;
 
 public class CollisionDataWriterCommandTests : IDisposable
 {
-    private readonly string _testDir = Path.Combine(Path.GetTempPath() ?? string.Empty, "SpaceBattleTests");
+    private readonly string _testDir;
     private bool _disposed = false;
 
     public CollisionDataWriterCommandTests()
@@ -19,13 +19,18 @@ public class CollisionDataWriterCommandTests : IDisposable
 
         var rootScope = IoC.Resolve<object>("Scopes.Root");
         var scope = IoC.Resolve<object>("Scopes.New", rootScope);
-
-        // Create test directory if it doesn't exist
-        if (!Directory.Exists(_testDir))
+ 
+        // Create test directory in a cross-platform way
+        _testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTests", Guid.NewGuid().ToString("N"));
+        
+        // Ensure the directory exists and is empty
+        if (Directory.Exists(_testDir))
         {
-            _ = Directory.CreateDirectory(_testDir);
+            Directory.Delete(_testDir, recursive: true);
         }
-
+        Directory.CreateDirectory(_testDir);
+ 
+        // Set up IoC
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
         IoC.Resolve<ICommand>(
@@ -34,14 +39,7 @@ public class CollisionDataWriterCommandTests : IDisposable
             (object[] _) => scope
         ).Execute();
 
-        _testDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempCollisions");
-        if (Directory.Exists(_testDir))
-        {
-            Directory.Delete(_testDir, recursive: true);
-        }
-
-        Directory.CreateDirectory(_testDir);
-
+        // Register the test directory with IoC
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Collision.StorageDirectory",
