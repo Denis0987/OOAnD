@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -197,6 +197,106 @@ public class CollisionDataWriterCommandTests : IDisposable
         var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
         Assert.True(ex.Message.Contains("Invalid file path or access denied") ||
                    ex.Message.Contains("Error writing to file"));
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyFileName_ThrowsArgumentException()
+    {
+        var points = new List<int[]> { new[] { 1, 2, 3 } };
+        var ex = Assert.Throws<ArgumentException>(() => new CollisionDataWriterCommand("", points));
+        Assert.Equal("File name cannot be empty or whitespace (Parameter 'fileName')", ex.Message);
+    }
+
+    [Fact]
+    public void Constructor_WithWhitespaceFileName_ThrowsArgumentException()
+    {
+        var points = new List<int[]> { new[] { 1, 2, 3 } };
+        var ex = Assert.Throws<ArgumentException>(() => new CollisionDataWriterCommand("   ", points));
+        Assert.Equal("File name cannot be empty or whitespace (Parameter 'fileName')", ex.Message);
+    }
+
+    [Theory]
+    [InlineData("test|file.log")]
+    [InlineData("test<file.log")]
+    [InlineData("test>file.log")]
+    [InlineData("test\"file.log")]
+    [InlineData("test:file.log")]
+    [InlineData("test*file.log")]
+    [InlineData("test?file.log")]
+    public void Constructor_WithInvalidFileNameCharacters_ThrowsArgumentException(string fileName)
+    {
+        var points = new List<int[]> { new[] { 1, 2, 3 } };
+        var ex = Assert.Throws<ArgumentException>(() => new CollisionDataWriterCommand(fileName, points));
+        Assert.Equal("File name contains invalid characters (Parameter 'fileName')", ex.Message);
+    }
+    
+    [Fact]
+    public void Constructor_WithBackslashesInName_DoesNotThrow()
+    {
+        var points = new List<int[]> { new[] { 1, 2, 3 } };
+        var writer = new CollisionDataWriterCommand("test\\file.log", points);
+        // No exception should be thrown
+    }
+
+    [Theory]
+    [InlineData("CON.log")]
+    [InlineData("PRN.log")]
+    [InlineData("AUX.log")]
+    [InlineData("NUL.log")]
+    [InlineData("COM1.log")]
+    [InlineData("LPT1.log")]
+    public void Constructor_WithReservedWindowsNames_ThrowsArgumentException(string fileName)
+    {
+        var points = new List<int[]> { new[] { 1, 2, 3 } };
+        var ex = Assert.Throws<ArgumentException>(() => new CollisionDataWriterCommand(fileName, points));
+        Assert.Equal("File name is a reserved system name (Parameter 'fileName')", ex.Message);
+    }
+
+    [Fact]
+    public void Execute_WhenStorageDirectoryNotSet_ThrowsInvalidOperationException()
+    {
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns((string)null!);
+
+        var writer = new CollisionDataWriterCommand(
+            "test.log",
+            new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object,
+            mockDirProvider.Object);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Equal("Storage directory is not set", ex.Message);
+    }
+
+    [Fact]
+    public void Execute_WithInvalidDirectory_ThrowsInvalidOperationException()
+    {
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(false);
+        mockFileSystem.Setup(f => f.CreateDirectory(It.IsAny<string>()))
+            .Throws<PathTooLongException>();
+            
+        var writer = new CollisionDataWriterCommand(
+            "test.log",
+            new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object,
+            new MockStorageDirectoryProvider("C:\\test"));
+
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Contains("Invalid file path or access denied", ex.Message);
+    }
+
+    private class MockStorageDirectoryProvider : CollisionDataWriterCommand.IStorageDirectoryProvider
+    {
+        private readonly string _directory;
+
+        public MockStorageDirectoryProvider(string directory)
+        {
+            _directory = directory;
+        }
+
+        public string? GetStorageDirectory() => _directory;
     }
 
     [Theory]
