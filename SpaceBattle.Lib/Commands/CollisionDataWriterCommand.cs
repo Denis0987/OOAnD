@@ -24,22 +24,33 @@ public class CollisionDataWriterCommand : ICommand
         _fileSystem = fileSystem ?? new DefaultFileSystem();
         _directoryProvider = directoryProvider ?? new DefaultStorageDirectoryProvider();
 
-        // Get just the file name part for validation
-        var fileNameOnly = Path.GetFileName(_fileName);
-
         // Check if the file name is null, empty, or whitespace
-        if (string.IsNullOrWhiteSpace(fileNameOnly))
+        if (string.IsNullOrWhiteSpace(_fileName))
         {
             throw new ArgumentException("File name cannot be empty or whitespace", nameof(fileName));
         }
 
-        // Check for invalid file name characters
-        // Note: We're using Path.GetInvalidFileNameChars() to get the list of invalid characters
-        // and checking if any of them exist in the file name
-        var invalidChars = Path.GetInvalidFileNameChars();
-        if (fileNameOnly.IndexOfAny(invalidChars) >= 0)
+        // Get just the file name part for validation (without the path)
+        var fileNameOnly = Path.GetFileName(_fileName);
+
+        // If Path.GetFileName returns empty, it means the path ends with a directory separator
+        if (string.IsNullOrEmpty(fileNameOnly))
+        {
+            throw new ArgumentException("File name cannot be empty or end with a directory separator", nameof(fileName));
+        }
+
+        // Check for invalid file name characters in the file name part only
+        var invalidFileNameChars = Path.GetInvalidFileNameChars();
+        if (fileNameOnly.IndexOfAny(invalidFileNameChars) >= 0)
         {
             throw new ArgumentException("File name contains invalid characters", nameof(fileName));
+        }
+
+        // Check for invalid path characters in the entire path
+        var invalidPathChars = Path.GetInvalidPathChars();
+        if (_fileName.IndexOfAny(invalidPathChars) >= 0)
+        {
+            throw new ArgumentException("Path contains invalid characters", nameof(fileName));
         }
     }
 
