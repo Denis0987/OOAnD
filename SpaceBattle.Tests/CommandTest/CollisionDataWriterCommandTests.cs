@@ -1,4 +1,4 @@
-﻿namespace SpaceBattle.Lib.Tests.CommandTests;
+namespace SpaceBattle.Lib.Tests.CommandTests;
 
 using System;
 using System.Collections.Generic;
@@ -15,15 +15,11 @@ public class CollisionDataWriterCommandTests : IDisposable
 
     public CollisionDataWriterCommandTests()
     {
-        // Initialize IoC
         new InitScopeBasedIoCImplementationCommand().Execute();
-
-        // Create a new scope for tests
         var rootScope = IoC.Resolve<object>("Scopes.Root");
         _scope = IoC.Resolve<object>("Scopes.New", rootScope);
         IoC.Resolve<ICommand>("Scopes.Current.Set", _scope).Execute();
 
-        // Set up test directory
         _testDir = Path.Combine(Path.GetTempPath(), "SpaceBattleTests", Guid.NewGuid().ToString());
         if (Directory.Exists(_testDir))
         {
@@ -32,7 +28,6 @@ public class CollisionDataWriterCommandTests : IDisposable
 
         Directory.CreateDirectory(_testDir);
 
-        // Register default storage directory
         IoC.Resolve<ICommand>(
             "IoC.Register",
             "Collision.StorageDirectory",
@@ -44,10 +39,8 @@ public class CollisionDataWriterCommandTests : IDisposable
     {
         try
         {
-            // Clean up test directory
             if (Directory.Exists(_testDir))
             {
-                // Remove read-only attributes from all files and directories
                 var directory = new DirectoryInfo(_testDir);
                 foreach (var file in directory.GetFiles("*", SearchOption.AllDirectories))
                 {
@@ -62,7 +55,6 @@ public class CollisionDataWriterCommandTests : IDisposable
                 Directory.Delete(_testDir, true);
             }
 
-            // Reset the current scope
             if (_scope != null)
             {
                 IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
@@ -70,7 +62,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         }
         catch (Exception ex)
         {
-            // Log the exception if needed
             Console.WriteLine($"Error during test cleanup: {ex}");
         }
     }
@@ -91,14 +82,11 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithEmptyCollisionPoints_WritesEmptyFile()
     {
-        // Arrange
         var fileName = "empty_test.log";
         var writer = new CollisionDataWriterCommand(fileName, new List<int[]>());
 
-        // Act
         writer.Execute();
 
-        // Assert
         var filePath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(filePath));
         var content = File.ReadAllText(filePath);
@@ -108,15 +96,12 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithValidData_WritesCorrectContent()
     {
-        // Arrange
         var fileName = "test.log";
         var samplePoints = new List<int[]> { new[] { 1, 2, 3 }, new[] { 4, 5, 6 } };
         var writer = new CollisionDataWriterCommand(fileName, samplePoints);
 
-        // Act
         writer.Execute();
 
-        // Assert
         var filePath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(filePath));
         var lines = File.ReadAllLines(filePath);
@@ -128,7 +113,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithNestedDirectories_CreatesDirectories()
     {
-        // Arrange
         var directory = Path.Combine("nested", "dir");
         var fileName = "test.log";
         var fullPath = Path.Combine(_testDir, directory, fileName);
@@ -141,7 +125,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
             .Callback<string, IEnumerable<string>>((path, _) =>
             {
-                // Verify the path contains our directory structure
                 Assert.Contains(directory, path);
                 Assert.EndsWith(fileName, path);
             });
@@ -152,10 +135,8 @@ public class CollisionDataWriterCommandTests : IDisposable
             mockFileSystem.Object,
             mockDirProvider.Object);
 
-        // Act
         writer.Execute();
 
-        // Assert - Verify directory creation was attempted
         mockFileSystem.Verify(f => f.CreateDirectory(It.Is<string>(d => d.Contains(directory))), Times.Once);
         mockFileSystem.Verify(f => f.WriteAllLines(It.Is<string>(p => p.Contains(directory) && p.EndsWith(fileName)),
             It.IsAny<IEnumerable<string>>()), Times.Once);
@@ -164,16 +145,13 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithNonexistentStorageDirectory_CreatesDirectoryAndWritesFile()
     {
-        // Arrange
         var newDir = Path.Combine(_testDir, "nonexistent", "subdir");
 
-        // Create a new scope for this test
         var scope = IoC.Resolve<object>("Scopes.New", _scope);
         IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
 
         try
         {
-            // Register the storage directory in the new scope
             IoC.Resolve<ICommand>(
                 "IoC.Register",
                 "Collision.StorageDirectory",
@@ -182,11 +160,9 @@ public class CollisionDataWriterCommandTests : IDisposable
 
             var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1, 2, 3 } });
 
-            // Act - Should not throw
             var exception = Record.Exception(() => writer.Execute());
             Assert.Null(exception);
 
-            // Assert - Verify file was created in the new directory
             var filePath = Path.Combine(newDir, "test.log");
             Assert.True(File.Exists(filePath));
             var content = File.ReadAllText(filePath);
@@ -194,7 +170,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         }
         finally
         {
-            // Reset to the test's scope
             IoC.Resolve<ICommand>("Scopes.Current.Set", _scope).Execute();
         }
     }
@@ -202,14 +177,12 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WhenFileInUse_ThrowsInvalidOperation()
     {
-        // Arrange
         var fileName = "in_use.log";
         var filePath = Path.Combine(_testDir, fileName);
         using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None))
         {
             var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
 
-            // Act & Assert
             var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
             Assert.Contains("Error writing to file", ex.Message);
         }
@@ -218,11 +191,9 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithVeryLongFileName_ThrowsInvalidOperation()
     {
-        // Arrange
         var longFileName = new string('a', 260) + ".log";
         var writer = new CollisionDataWriterCommand(longFileName, new List<int[]> { new[] { 1, 2, 3 } });
 
-        // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
         Assert.True(ex.Message.Contains("Invalid file path or access denied") ||
                    ex.Message.Contains("Error writing to file"));
@@ -231,7 +202,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithInvalidFileName_ThrowsInvalidOperation()
     {
-        // Arrange & Act & Assert
         var ex = Assert.Throws<ArgumentException>(() =>
             new CollisionDataWriterCommand("test<>.log", new List<int[]> { new[] { 1, 2, 3 } }));
         Assert.Contains("File name contains invalid characters", ex.Message);
@@ -241,7 +211,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithNullArrayInCollisionPoints_HandlesGracefully()
     {
-        // Arrange
         var fileName = "null_array_test.log";
         var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, null!, new[] { 4, 5, 6 } };
         var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
@@ -252,10 +221,8 @@ public class CollisionDataWriterCommandTests : IDisposable
 
         var writer = new CollisionDataWriterCommand(fileName, collisionPoints, mockFileSystem.Object, mockDirProvider.Object);
 
-        // Act
         writer.Execute();
 
-        // Assert
         mockFileSystem.Verify(f => f.WriteAllLines(
             It.Is<string>(p => p.EndsWith(fileName)),
             It.Is<IEnumerable<string>>(lines =>
@@ -270,7 +237,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WhenFileSystemThrowsUnauthorizedAccess_ThrowsInvalidOperation()
     {
-        // Arrange
         var fileName = "unauthorized.log";
         var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
         var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
@@ -283,7 +249,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
             mockFileSystem.Object, mockDirProvider.Object);
 
-        // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
         Assert.Contains("Invalid file path or access denied", ex.Message);
         Assert.IsType<UnauthorizedAccessException>(ex.InnerException);
@@ -292,7 +257,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WhenDiskIsFull_ThrowsInvalidOperation()
     {
-        // Arrange
         var fileName = "disk_full_test.log";
         var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
         var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
@@ -300,7 +264,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
         mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
 
-        // Simulate disk full scenario
         var ioException = new IOException("Insufficient disk space", new IOException("The disk is full"));
         mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
             .Throws(ioException);
@@ -308,7 +271,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } },
             mockFileSystem.Object, mockDirProvider.Object);
 
-        // Act & Assert
         var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
         Assert.Contains("Error writing to file", ex.Message);
         Assert.Same(ioException, ex.InnerException);
@@ -317,7 +279,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithCustomFileSystemAndDirectoryProvider_WorksCorrectly()
     {
-        // Arrange
         var fileName = "custom_impl_test.log";
         var expectedLines = new[] { "1,2,3", "4,5,6" };
         var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, new[] { 4, 5, 6 } };
@@ -327,10 +288,8 @@ public class CollisionDataWriterCommandTests : IDisposable
 
         var writer = new CollisionDataWriterCommand(fileName, collisionPoints, customFileSystem, customDirProvider);
 
-        // Act
         writer.Execute();
 
-        // Assert - Verify the file was written with correct content
         var filePath = Path.Combine(_testDir, fileName);
         Assert.True(File.Exists(filePath));
         var actualLines = File.ReadAllLines(filePath);
@@ -340,12 +299,10 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithLargeNumberOfCollisionPoints_HandlesCorrectly()
     {
-        // Arrange
         var fileName = "large_file_test.log";
         var random = new Random();
-        const int pointCount = 10000; // 10,000 points
+        const int pointCount = 10000;
 
-        // Generate large set of collision points
         var collisionPoints = new List<int[]>();
         var expectedLines = new List<string>();
 
@@ -365,7 +322,6 @@ public class CollisionDataWriterCommandTests : IDisposable
         mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
         mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
 
-        // Capture the written lines for verification
         IEnumerable<string>? actualLines = null;
         mockFileSystem.Setup(f => f.WriteAllLines(It.IsAny<string>(), It.IsAny<IEnumerable<string>>()))
             .Callback<string, IEnumerable<string>>((_, lines) => actualLines = lines.ToList());
@@ -373,18 +329,12 @@ public class CollisionDataWriterCommandTests : IDisposable
         var writer = new CollisionDataWriterCommand(fileName, collisionPoints,
             mockFileSystem.Object, mockDirProvider.Object);
 
-        // Act
         writer.Execute();
 
-        // Assert
         Assert.NotNull(actualLines);
         Assert.Equal(pointCount, actualLines!.Count());
-
-        // Verify first and last points to ensure correct ordering and content
         Assert.Equal(expectedLines[0], actualLines!.First());
         Assert.Equal(expectedLines[pointCount - 1], actualLines!.Last());
-
-        // Verify all lines were written correctly
         Assert.Equal(expectedLines, actualLines);
     }
 
