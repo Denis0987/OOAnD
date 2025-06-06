@@ -1,4 +1,4 @@
-using Hwdtech.Ioc;
+﻿using Hwdtech.Ioc;
 
 namespace SpaceBattle.Lib.Tests;
 
