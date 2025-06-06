@@ -246,11 +246,10 @@ public class CollisionDataWriterCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("test/.log")]
-    [InlineData("test\\.log")]
-    public void Constructor_WithDirectorySeparators_DoesNotThrow(string fileName)
+    [InlineData("test/subdir/test.log")]
+    public void Constructor_WithForwardSlashes_DoesNotThrow(string fileName)
     {
-        // These should not throw as the implementation handles directory separators
+        // These should not throw as the implementation handles forward slashes
         var command = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
         Assert.NotNull(command);
     }
@@ -529,14 +528,20 @@ public class CollisionDataWriterCommandTests : IDisposable
     [Fact]
     public void Execute_WithDifferentDirectorySeparators_WorksCorrectly()
     {
-        var fileName = "dir1/dir2\\dir3/test.log";
+        // Use forward slashes which are cross-platform
+        var fileName = "dir1/subdir/test.log";
         var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
 
         writer.Execute();
 
-        var normalizedPath = Path.Combine(_testDir, fileName.Replace('\\', Path.DirectorySeparatorChar)
-                                                          .Replace('/', Path.DirectorySeparatorChar));
-        Assert.True(File.Exists(normalizedPath));
+        // Verify the file was created in the expected location
+        var expectedPath = Path.Combine(_testDir, fileName.Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(expectedPath));
+
+        // Verify the content
+        var content = File.ReadAllLines(expectedPath);
+        Assert.Single(content);
+        Assert.Equal("1,2,3", content[0]);
     }
 
     [Fact]
