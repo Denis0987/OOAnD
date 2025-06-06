@@ -1,4 +1,4 @@
-using SpaceBattle.Lib;
+﻿using SpaceBattle.Lib;
 
 namespace SpaceBattle.Tests;
 
@@ -31,7 +31,7 @@ public class CollisionGridInsertRemoveTests
     {
         var entity = new MockMoving(20, 30);
         var collisionGrid = new CollisionGridInsertCommand(10);
-        
+
         // Test that placing an entity doesn't throw
         var exception = Record.Exception(() => collisionGrid.PlaceEntity(entity));
         Assert.Null(exception);
@@ -47,7 +47,7 @@ public class CollisionGridInsertRemoveTests
         // Test that placing multiple entities doesn't throw
         var exception1 = Record.Exception(() => collisionGrid.PlaceEntity(entity1));
         var exception2 = Record.Exception(() => collisionGrid.PlaceEntity(entity2));
-        
+
         Assert.Null(exception1);
         Assert.Null(exception2);
     }
