@@ -199,13 +199,105 @@ public class CollisionDataWriterCommandTests : IDisposable
                    ex.Message.Contains("Error writing to file"));
     }
 
-    [Fact]
-    public void Execute_WithInvalidFileName_ThrowsInvalidOperation()
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_WithEmptyOrWhitespaceFileName_ThrowsArgumentException(string fileName)
     {
         var ex = Assert.Throws<ArgumentException>(() =>
-            new CollisionDataWriterCommand("test<>.log", new List<int[]> { new[] { 1, 2, 3 } }));
+            new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } }));
+        Assert.Contains("File name cannot be empty or whitespace", ex.Message);
+        Assert.Equal("fileName", ex.ParamName);
+    }
+
+    [Theory]
+    [InlineData("CON")]
+    [InlineData("PRN")]
+    [InlineData("AUX")]
+    [InlineData("NUL")]
+    [InlineData("COM1")]
+    [InlineData("LPT1")]
+    public void Constructor_WithReservedFileName_ThrowsArgumentException(string fileName)
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            new CollisionDataWriterCommand($"{fileName}.log", new List<int[]> { new[] { 1, 2, 3 } }));
+        Assert.Contains("File name is a reserved system name", ex.Message);
+        Assert.Equal("fileName", ex.ParamName);
+    }
+
+    [Theory]
+    [InlineData("test<>.log")]
+    [InlineData("test|.log")]
+    [InlineData("test?.log")]
+    [InlineData("test*.log")]
+    [InlineData("test\".log")]
+    [InlineData("test:.log")]
+    [InlineData("test ")]
+    [InlineData("test.")]
+    [InlineData("test..")]
+    [InlineData(".")]
+    [InlineData("..")]
+    public void Constructor_WithInvalidFileName_ThrowsArgumentException(string fileName)
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } }));
         Assert.Contains("File name contains invalid characters", ex.Message);
         Assert.Equal("fileName", ex.ParamName);
+    }
+
+    [Theory]
+    [InlineData("test/.log")]
+    [InlineData("test\\.log")]
+    public void Constructor_WithDirectorySeparators_DoesNotThrow(string fileName)
+    {
+        // These should not throw as the implementation handles directory separators
+        var command = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
+        Assert.NotNull(command);
+    }
+
+    [Fact]
+    public void Execute_WithNullStorageDirectory_ThrowsInvalidOperation()
+    {
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns((string)null!);
+
+        var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Equal("Storage directory is not set", ex.Message);
+    }
+
+    [Fact]
+    public void Execute_WithEmptyStorageDirectory_ThrowsInvalidOperation()
+    {
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns("");
+
+        var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Equal("Storage directory is not set", ex.Message);
+    }
+
+    [Fact]
+    public void Execute_WithWhitespaceStorageDirectory_ThrowsInvalidOperation()
+    {
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns("   ");
+
+        var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1, 2, 3 } },
+            mockFileSystem.Object, mockDirProvider.Object);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
+        Assert.Equal("Storage directory is not set", ex.Message);
     }
 
     [Fact]
@@ -394,6 +486,60 @@ public class CollisionDataWriterCommandTests : IDisposable
     }
 
     [Fact]
+    public void Execute_WithEmptyArrayInCollisionPoints_HandlesGracefully()
+    {
+        var fileName = "empty_array_test.log";
+        var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, Array.Empty<int>(), new[] { 4, 5, 6 } };
+        var mockFileSystem = new Mock<CollisionDataWriterCommand.IFileSystem>();
+        var mockDirProvider = new Mock<CollisionDataWriterCommand.IStorageDirectoryProvider>();
+
+        mockDirProvider.Setup(p => p.GetStorageDirectory()).Returns(_testDir);
+        mockFileSystem.Setup(f => f.DirectoryExists(It.IsAny<string>())).Returns(true);
+
+        var writer = new CollisionDataWriterCommand(fileName, collisionPoints, mockFileSystem.Object, mockDirProvider.Object);
+
+        writer.Execute();
+
+        mockFileSystem.Verify(f => f.WriteAllLines(
+            It.Is<string>(p => p.EndsWith(fileName)),
+            It.Is<IEnumerable<string>>(lines =>
+                lines.Count() == 3 &&
+                lines.ElementAt(0) == "1,2,3" &&
+                lines.ElementAt(1) == "" &&
+                lines.ElementAt(2) == "4,5,6"
+            )
+        ), Times.Once);
+    }
+
+    [Fact]
+    public void Execute_WithSpecialCharactersInFileName_WorksCorrectly()
+    {
+        var fileName = "test_äöüß_测试_тест_😊.log";
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
+
+        writer.Execute();
+
+        var filePath = Path.Combine(_testDir, fileName);
+        Assert.True(File.Exists(filePath));
+        var content = File.ReadAllLines(filePath);
+        Assert.Single(content);
+        Assert.Equal("1,2,3", content[0]);
+    }
+
+    [Fact]
+    public void Execute_WithDifferentDirectorySeparators_WorksCorrectly()
+    {
+        var fileName = "dir1/dir2\\dir3/test.log";
+        var writer = new CollisionDataWriterCommand(fileName, new List<int[]> { new[] { 1, 2, 3 } });
+
+        writer.Execute();
+
+        var normalizedPath = Path.Combine(_testDir, fileName.Replace('\\', Path.DirectorySeparatorChar)
+                                                          .Replace('/', Path.DirectorySeparatorChar));
+        Assert.True(File.Exists(normalizedPath));
+    }
+
+    [Fact]
     public void Execute_WhenPathIsRoot_HandlesCorrectly()
     {
         // This test verifies behavior when the path is at the root of the drive
@@ -452,27 +598,6 @@ public class CollisionDataWriterCommandTests : IDisposable
     }
 
     [Fact]
-    public void Execute_WithEmptyArrayInCollisionPoints_HandlesGracefully()
-    {
-        // Arrange
-        var fileName = "empty_array_test.log";
-        var collisionPoints = new List<int[]> { new[] { 1, 2, 3 }, Array.Empty<int>(), new[] { 4, 5, 6 } };
-        var writer = new CollisionDataWriterCommand(fileName, collisionPoints);
-
-        // Act
-        writer.Execute();
-
-        // Assert
-        var filePath = Path.Combine(_testDir, fileName);
-        Assert.True(File.Exists(filePath));
-        var lines = File.ReadAllLines(filePath);
-        Assert.Equal(3, lines.Length);
-        Assert.Equal("1,2,3", lines[0]);
-        Assert.Equal("", lines[1]);
-        Assert.Equal("4,5,6", lines[2]);
-    }
-
-    [Fact]
     public void Execute_WhenStorageDirectoryIsRoot_HandlesCorrectly()
     {
         // Arrange
@@ -527,96 +652,6 @@ public class CollisionDataWriterCommandTests : IDisposable
             }
 
             IoC.Resolve<ICommand>("Scopes.Current.Set", IoC.Resolve<object>("Scopes.Root")).Execute();
-        }
-    }
-
-    [Fact]
-    public void Execute_WithNullStorageDirectory_ThrowsInvalidOperation()
-    {
-        // Arrange - Create a new scope with null storage directory
-        var scope = IoC.Resolve<object>("Scopes.New", _scope);
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            // Explicitly register null as storage directory
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (Func<object[], string>)(_ => null!)
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1 } });
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", ex.Message);
-        }
-        finally
-        {
-            // Reset to the test's scope
-            IoC.Resolve<ICommand>("Scopes.Current.Set", _scope).Execute();
-        }
-    }
-
-    [Fact]
-    public void Execute_WithEmptyStorageDirectory_ThrowsInvalidOperation()
-    {
-        // Arrange - Create a new scope with empty storage directory
-        var scope = IoC.Resolve<object>("Scopes.New", _scope);
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            // Register empty string as storage directory
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (object[] _) => string.Empty
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1 } });
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            Assert.Contains("Storage directory is not set", ex.Message);
-        }
-        finally
-        {
-            // Reset to the test's scope
-            IoC.Resolve<ICommand>("Scopes.Current.Set", _scope).Execute();
-        }
-    }
-
-    [Fact]
-    public void Execute_WithWhitespaceStorageDirectory_ThrowsInvalidOperation()
-    {
-        // Arrange - Create a new scope with whitespace storage directory
-        var scope = IoC.Resolve<object>("Scopes.New", _scope);
-        IoC.Resolve<ICommand>("Scopes.Current.Set", scope).Execute();
-
-        try
-        {
-            // Register whitespace string as storage directory
-            IoC.Resolve<ICommand>(
-                "IoC.Register",
-                "Collision.StorageDirectory",
-                (object[] _) => "   "
-            ).Execute();
-
-            var writer = new CollisionDataWriterCommand("test.log", new List<int[]> { new[] { 1 } });
-
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => writer.Execute());
-            // The command should either throw about invalid path or about directory not being set
-            Assert.True(ex.Message.Contains("Storage directory is not set") ||
-                       ex.Message.Contains("Invalid file path or access denied"),
-                      $"Unexpected error message: {ex.Message}");
-        }
-        finally
-        {
-            // Reset to the test's scope
-            IoC.Resolve<ICommand>("Scopes.Current.Set", _scope).Execute();
         }
     }
 }
