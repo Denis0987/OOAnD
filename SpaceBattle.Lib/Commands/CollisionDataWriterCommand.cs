@@ -39,19 +39,36 @@ public class CollisionDataWriterCommand : ICommand
             throw new ArgumentException("File name cannot be empty or end with a directory separator", nameof(fileName));
         }
 
-        // Check for invalid file name characters in the file name part only
-        var invalidFileNameChars = Path.GetInvalidFileNameChars();
-        if (fileNameOnly.IndexOfAny(invalidFileNameChars) >= 0 || _fileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+        // Check for any invalid characters in the file name
+        var invalidChars = Path.GetInvalidFileNameChars();
+        if (fileNameOnly.IndexOfAny(invalidChars) >= 0)
         {
             throw new ArgumentException("File name contains invalid characters", nameof(fileName));
         }
 
-        // Additional check for specific invalid patterns that might be allowed by the above checks
-        if (fileNameOnly.Trim().Length == 0 ||
+        // Check for reserved device names (like CON, PRN, etc.)
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(fileNameOnly);
+        var reservedNames = new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
+        if (reservedNames.Contains(fileNameWithoutExtension, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException("File name is a reserved system name", nameof(fileName));
+        }
+
+        // Check for invalid patterns
+        if (fileNameOnly.Trim() != fileNameOnly ||
             fileNameOnly == "." ||
             fileNameOnly == ".." ||
+            fileNameOnly.EndsWith(".") ||
             fileNameOnly.EndsWith(" ") ||
-            fileNameOnly.EndsWith("."))
+            fileNameOnly.Contains("\\") ||
+            fileNameOnly.Contains("/") ||
+            fileNameOnly.Contains(":") ||
+            fileNameOnly.Contains("*") ||
+            fileNameOnly.Contains("?") ||
+            fileNameOnly.Contains("\"") ||
+            fileNameOnly.Contains("<") ||
+            fileNameOnly.Contains(">") ||
+            fileNameOnly.Contains("|"))
         {
             throw new ArgumentException("File name contains invalid characters", nameof(fileName));
         }
