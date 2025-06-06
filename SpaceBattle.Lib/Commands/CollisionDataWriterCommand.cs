@@ -41,16 +41,19 @@ public class CollisionDataWriterCommand : ICommand
 
         // Check for invalid file name characters in the file name part only
         var invalidFileNameChars = Path.GetInvalidFileNameChars();
-        if (fileNameOnly.IndexOfAny(invalidFileNameChars) >= 0)
+        if (fileNameOnly.IndexOfAny(invalidFileNameChars) >= 0 || _fileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
         {
             throw new ArgumentException("File name contains invalid characters", nameof(fileName));
         }
 
-        // Check for invalid path characters in the entire path
-        var invalidPathChars = Path.GetInvalidPathChars();
-        if (_fileName.IndexOfAny(invalidPathChars) >= 0)
+        // Additional check for specific invalid patterns that might be allowed by the above checks
+        if (fileNameOnly.Trim().Length == 0 ||
+            fileNameOnly == "." ||
+            fileNameOnly == ".." ||
+            fileNameOnly.EndsWith(" ") ||
+            fileNameOnly.EndsWith("."))
         {
-            throw new ArgumentException("Path contains invalid characters", nameof(fileName));
+            throw new ArgumentException("File name contains invalid characters", nameof(fileName));
         }
     }
 
